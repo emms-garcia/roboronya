@@ -1,20 +1,48 @@
+import os
+
 import asyncio
 import hangups
 
 import commands
+import utils
+
+
+class RoboronyaException(Exception):
+    pass
 
 
 class Roboronya(object):
+    """
+    The Roboronya bot, most logic here should be base to
+    the bot functionality and should not need to be tweaked
+    to support more commands / plugins.
+    But it probably will...
+    """
 
     REFRESH_TOKEN_PATH = 'refresh_token.txt'
 
     def __init__(self):
+        try:
+            email = os.environ['ROBORONYA_EMAIL']
+            password = os.environ['ROBORONYA_PASSWORD']
+        except KeyError as e:
+            raise RoboronyaException(
+                'Failed to retrieve credentials from env. '
+                'You must set the ROBORONYA_EMAIL and '
+                'ROBORONYA_PASSWORD env variables. '
+                'Error: {} not found.'.format(e)
+            ) from None
+
         self._hangups = hangups.Client(
-            hangups.auth.get_auth_stdin(self.REFRESH_TOKEN_PATH)
+            utils.get_auth_stdin_patched(
+                email,
+                password,
+                self.REFRESH_TOKEN_PATH)
         )
 
     @asyncio.coroutine
     def _on_hangups_connect(self):
+        print('Connected.')
         self._user_list, self._conv_list = (
             yield from hangups.conversation.
             build_user_conversation_list(self._hangups)
@@ -33,6 +61,7 @@ class Roboronya(object):
         ))
 
     def _on_hangups_event(self, conv_event):
+        print('Conversation event received.')
         if isinstance(conv_event, hangups.ChatMessageEvent):
             conv = self._conv_list.get(conv_event.conversation_id)
             self._handle_message(conv, conv_event)
@@ -45,7 +74,8 @@ class Roboronya(object):
     def _handle_message(self, conv, conv_event):
         message = conv_event.text
         user = conv.get_user(conv_event.user_id)
-        arg_lookup, tokens = False, message.split(' ')
+
+        tokens = message.split(' ')
         commands_to_run = []
         for token in tokens:
             if '/' in token:
@@ -53,7 +83,6 @@ class Roboronya(object):
                     'args': [conv, message],
                     'name': token.replace('/', ''),
                 })
-
             else:
                 if commands_to_run:
                     commands_to_run[-1]['args'].append(token)
@@ -64,10 +93,10 @@ class Roboronya(object):
                 command_func = getattr(commands, command['name'])
                 command_func(*command['args'], **kwargs)
             except AttributeError as e:
-                print(e)
                 print(
-                    'Could not find command "{}".'.format(
+                    'Could not find command "{}". Error: {}'.format(
                         command['name'],
+                        e,
                     )
                 )
 
