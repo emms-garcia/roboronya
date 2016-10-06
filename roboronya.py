@@ -4,6 +4,7 @@ __title__ = 'roboronya'
 __version__ = '0.1'
 
 import os
+import shutil
 
 import asyncio
 import hangups
@@ -23,7 +24,7 @@ class Roboronya(object):
     to support more commands / plugins.
     But it probably will...
     """
-    REFRESH_TOKEN_PATH = 'refresh_token.txt'
+    REFRESH_TOKEN_PATH = 'runtime/refresh_token.txt'
 
     def __init__(self):
         try:
@@ -86,7 +87,7 @@ class Roboronya(object):
         for command in possible_commands:
             kwargs['command_name'] = command['name']
             try:
-                command_func = getattr(commands, command['name'])
+                command_func = getattr(commands.Commands, command['name'])
                 command_func(*command['args'], **kwargs)
             except AttributeError as e:
                 print(
@@ -136,3 +137,4 @@ if __name__ == '__main__':
         roboronya.run()
     except KeyboardInterrupt:
         print('Roboronya was stopped.')
+        shutil.rmtree('runtime')
