@@ -14,6 +14,44 @@ from roboronya import Roboronya
     Helpers for the commands.
 """
 
+COMMAND_HELP = {
+    'gif': (
+        'Searches for a gif that matches the words '
+        'following the command. *i. e. /gif cat*'
+    ),
+    'cointoss': (
+        'Randomly toss a coin. 50-50 chances.'
+    ),
+    'ping': (
+        'Check if bot is online. Should always work.'
+    ),
+    'love': (
+        'From Roboronya with love.'
+    )
+}
+
+
+def _failsafe(fn):
+    """
+    Sends a message in case of command failure.
+    """
+    error_message = (
+        'Sorry {user_fullname} I failed to process '
+        'your command: "{original_message}".'
+    )
+
+    def wrapper(conv, message, cmd_args, **kwargs):
+        try:
+            return fn(conv, message, cmd_args, **kwargs)
+        except Exception as e:
+            print(e)
+            Roboronya._send_response(
+                conv,
+                [{'text': error_message}],
+                **kwargs
+            )
+    return wrapper
+
 
 def _log_command(fn):
     """
@@ -66,12 +104,30 @@ def _requires_args(fn):
 """
 
 
-@_log_command
-@_requires_args
-def gif(conv, message, cmd_args, **kwargs):
+@_failsafe
+def help(conv, message, cmd_args, **kwargs):
     """
     /gif command. Should send the first gif found from an API
     (probably giphy) that matches the argument words.
+    """
+    response = []
+    for cmd_name, help_message in COMMAND_HELP.items():
+        response.append(
+            '**/{}**: {}'.format(cmd_name, help_message)
+        )
+
+    Roboronya._send_response(
+        conv, '\n'.join(response), **kwargs
+    )
+
+
+@_log_command
+@_requires_args
+@_failsafe
+def gif(conv, message, cmd_args, **kwargs):
+    """
+    /gif command. Translates commands argument words as
+    gifs using giphy.
     """
     giphy_image = giphypop.translate(phrase=' '.join(cmd_args))
     MAX_GIF_SIZE_IN_MB = int(os.environ.get('ROBORONYA_MAX_GIF_SIZE', '5'))
@@ -81,15 +137,10 @@ def gif(conv, message, cmd_args, **kwargs):
         kwargs['gif_url'] = giphy_image.bitly
         Roboronya._send_response(
             conv,
-            [{
-                'text': (
-                    'Sorry {user_fullname} gif is too large. '
-                    'Here\'s the link instead: '
-                )
-            }, {
-                'text': '{gif_url}',
-                'url': giphy_image.bitly,
-            }],
+            (
+                'Sorry {user_fullname} gif is too large. '
+                'Here\'s the link instead: {gif_url}'
+            ),
             **kwargs
         )
     else:
@@ -103,29 +154,27 @@ def gif(conv, message, cmd_args, **kwargs):
 
         Roboronya._send_response(
             conv,
-            [{
-                'text': 'Here\'s your gif {user_fullname}.'
-            }],
+            'Here\'s your gif {user_fullname}.',
             image_file=open(file_path, 'rb+'),
             **kwargs
         )
 
 
 @_log_command
+@_failsafe
 def love(conv, message, cmd_args, **kwargs):
     """
     /love command. From Robornya with love.
     """
     Roboronya._send_response(
         conv,
-        [{
-            'text': 'I love you {user_fullname} <3.'
-        }],
+        'I love you {user_fullname} <3.',
         **kwargs
     )
 
 
 @_log_command
+@_failsafe
 def cointoss(conv, message, cmd_args, **kwargs):
     """
     /cointoss command. Tosses a coin to make a decision as gods should,
@@ -133,8 +182,19 @@ def cointoss(conv, message, cmd_args, **kwargs):
     """
     Roboronya._send_response(
         conv,
-        [{
-            'text': 'heads' if random.getrandbits(1) == 0 else 'tails'
-        }],
+        'heads' if random.getrandbits(1) == 0 else 'tails',
+        **kwargs
+    )
+
+
+@_log_command
+@_failsafe
+def ping(conv, message, cmd_args, **kwargs):
+    """
+    /ping command. Check bot status.
+    """
+    Roboronya._send_response(
+        conv,
+        '**Pong!**',
         **kwargs
     )
