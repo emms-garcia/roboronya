@@ -68,23 +68,22 @@ class Roboronya(object):
             return
 
         message = conv_event.text
-        tokens = message.split()
-        commands_to_run = []
-        for token in tokens:
+        possible_commands = []
+        for token in message.split():
             if '/' in token:
-                commands_to_run.append({
+                possible_commands.append({
                     'args': [conv, message, []],
                     'name': token.replace('/', ''),
                 })
             else:
-                if commands_to_run:
-                    commands_to_run[-1]['args'][-1].append(token)
+                if possible_commands:
+                    possible_commands[-1]['args'][-1].append(token)
 
         kwargs = {
             'original_message': message,
             'user_fullname': user.full_name,
         }
-        for command in commands_to_run:
+        for command in possible_commands:
             kwargs['command_name'] = command['name']
             try:
                 command_func = getattr(commands, command['name'])
