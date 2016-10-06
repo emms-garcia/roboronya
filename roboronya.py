@@ -51,30 +51,16 @@ class Roboronya(object):
             yield from hangups.conversation.
             build_user_conversation_list(self._hangups)
         )
-        self._conv_list.on_event.add_observer(self._on_hangups_event)
+        self._conv_list.on_event.add_observer(
+            lambda x: asyncio.async(self._on_hangups_event(x))
+        )
 
-    @staticmethod
-    def _send_response(conv, segments, **kwargs):
-        asyncio.async(conv.send_message(
-            [hangups.ChatMessageSegment(
-                segment['text'].format(
-                    **kwargs
-                ),
-                link_target=segment.get('url')
-            ) for segment in segments],
-            image_file=kwargs.get('image_file'),
-        ))
-
+    @asyncio.coroutine
     def _on_hangups_event(self, conv_event):
         print('Conversation event received.')
         if isinstance(conv_event, hangups.ChatMessageEvent):
             conv = self._conv_list.get(conv_event.conversation_id)
             self._handle_message(conv, conv_event)
-
-    def _get_command_args(self, user):
-        return {
-            'user_fullname': user.full_name,
-        }
 
     def _handle_message(self, conv, conv_event):
         user = conv.get_user(conv_event.user_id)
@@ -82,20 +68,22 @@ class Roboronya(object):
             return
 
         message = conv_event.text
-        tokens = message.split(' ')
-        commands_to_run = []
-        for token in tokens:
+        possible_commands = []
+        for token in message.split():
             if '/' in token:
-                commands_to_run.append({
+                possible_commands.append({
                     'args': [conv, message, []],
                     'name': token.replace('/', ''),
                 })
             else:
-                if commands_to_run:
-                    commands_to_run[-1]['args'][-1].append(token)
+                if possible_commands:
+                    possible_commands[-1]['args'][-1].append(token)
 
-        kwargs = self._get_command_args(user)
-        for command in commands_to_run:
+        kwargs = {
+            'original_message': message,
+            'user_fullname': user.full_name,
+        }
+        for command in possible_commands:
             kwargs['command_name'] = command['name']
             try:
                 command_func = getattr(commands, command['name'])
@@ -123,6 +111,15 @@ class Roboronya(object):
                     }],
                     **kwargs
                 )
+
+    @staticmethod
+    def _send_response(conv, text, **kwargs):
+        asyncio.async(conv.send_message(
+            hangups.ChatMessageSegment.from_str(
+                text.format(**kwargs)
+            ),
+            image_file=kwargs.get('image_file')
+        ))
 
     def run(self):
         self._hangups.on_connect.add_observer(
