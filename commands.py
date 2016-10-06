@@ -8,6 +8,7 @@ import requests
 
 
 from roboronya import Roboronya
+import utils
 
 
 """
@@ -155,9 +156,7 @@ class Commands(object):
                 '.gif',
             )
 
-            if not os.path.exists(file_path):
-                os.makedirs(os.path.dirname(file_path))
-
+            utils.create_path_if_not_exists(file_path)
             with open(file_path, 'wb+') as img:
                 img.write(response.content)
 

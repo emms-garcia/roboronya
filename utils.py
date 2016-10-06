@@ -3,13 +3,17 @@ import hangups
 import os
 
 
+def create_path_if_not_exists(file_path):
+    if not os.path.exists(os.path.dirname(file_path)):
+        os.makedirs(os.path.dirname(file_path))
+
+
 def get_auth_stdin_patched(email, password, refresh_token_filename):
     """
     Patch to hangups.auth.get_auth_stdin to avoid
     having to input email and password.
     """
-    if not os.path.exists(refresh_token_filename):
-        os.makedirs(os.path.dirname(refresh_token_filename))
+    create_path_if_not_exists(refresh_token_filename)
 
     class CredentialsPromptPatch(object):
         @staticmethod
