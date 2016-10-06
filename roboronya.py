@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+__author__ = 'Emmanuel García'
+__title__ = 'roboronya'
+__version__ = '0.1'
+
 import os
 
 import asyncio
@@ -129,4 +134,8 @@ class Roboronya(object):
 
 
 if __name__ == '__main__':
-    Roboronya().run()
+    roboronya = Roboronya()
+    try:
+        roboronya.run()
+    except KeyboardInterrupt:
+        print('Roboronya was stopped.')

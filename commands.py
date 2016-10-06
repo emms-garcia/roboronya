@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import random
 import os
 import uuid
@@ -9,7 +10,15 @@ import requests
 from roboronya import Roboronya
 
 
+"""
+    Helpers for the commands.
+"""
+
+
 def _log_command(fn):
+    """
+        Decorator to log running command data.
+    """
     def wrapper(conv, message, cmd_args, **kwargs):
         print(
             'Running /{} command with arguments: [{}].'.format(
@@ -17,6 +26,32 @@ def _log_command(fn):
                 ', '.join(cmd_args)
             )
         )
+        return fn(conv, message, cmd_args, **kwargs)
+    return wrapper
+
+
+def _requires_args(fn):
+    """
+        Decorator to validate commands that require arguments.
+    """
+    def wrapper(conv, message, cmd_args, **kwargs):
+        if not cmd_args:
+            print(
+                'The command /{} requires arguments to work.'.format(
+                    kwargs['command_name']
+                )
+            )
+            Roboronya._send_response(
+                conv,
+                [{
+                    'text': (
+                        'Sorry {user_fullname}, the /{command_name} '
+                        'command requires arguments to work.'
+                    )
+                }],
+                **kwargs
+            )
+            return
         return fn(conv, message, cmd_args, **kwargs)
     return wrapper
 
@@ -32,14 +67,14 @@ def _log_command(fn):
 
 
 @_log_command
+@_requires_args
 def gif(conv, message, cmd_args, **kwargs):
     """
     /gif command. Should send the first gif found from an API
     (probably giphy) that matches the argument words.
     """
-
     giphy_image = giphypop.translate(phrase=' '.join(cmd_args))
-    MAX_GIF_SIZE_IN_MB = 5
+    MAX_GIF_SIZE_IN_MB = int(os.environ.get('ROBORONYA_MAX_GIF_SIZE', '5'))
     size_in_mb = giphy_image.filesize * 1e-6
     print('GIF Size In MB => ', size_in_mb)
     if size_in_mb > MAX_GIF_SIZE_IN_MB:
