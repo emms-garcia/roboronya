@@ -6,9 +6,9 @@ import uuid
 import giphypop
 import requests
 
-
+import config
 from roboronya import Roboronya
-import utils
+from utils import create_path_if_not_exists
 
 
 """
@@ -17,7 +17,7 @@ import utils
 
 COMMAND_HELP = {
     'gif': (
-        'Searches for a gif that matches the words '
+        'Searches for a gif (from Giphy) that matches the words '
         'following the command. *i. e. /gif cat*'
     ),
     'cointoss': (
@@ -28,6 +28,18 @@ COMMAND_HELP = {
     ),
     'love': (
         'From Roboronya with love.'
+    ),
+    'gfycat': (
+        'Searches for a gif (from Gfycat) that matches the words '
+        'following the command. *i. e. /gfycat dog*. Unlike /gif '
+        'this command ensures gifs are under 2MB, so they should '
+        'be relatively fast.'
+    ),
+    'magicball': (
+        'Ask Roboronya for advice. She knows more than she tells.'
+    ),
+    'caracola': (
+        'Alias for */magicball*.'
     )
 }
 
@@ -99,6 +111,31 @@ def _requires_args(fn):
     return wrapper
 
 
+def _send_file(conv, media_url, **kwargs):
+    """
+    Send a file to the conversation.
+    """
+    response = requests.get(media_url)
+    file_path = '{}.{}'.format(
+        os.path.join(
+            config.IMAGES_DIR,
+            str(uuid.uuid4())
+        ),
+        '.gif',
+    )
+
+    create_path_if_not_exists(file_path)
+    with open(file_path, 'wb+') as img:
+        img.write(response.content)
+
+    Roboronya._send_response(
+        conv,
+        'Here\'s your gif {user_fullname}.',
+        image_file=open(file_path, 'rb+'),
+        **kwargs
+    )
+
+
 """
     Implemented commands. Any /command_name found in message (and
     arguments) will be redirected here. Parameters are (in order):
@@ -136,10 +173,9 @@ class Commands(object):
         gifs using giphy.
         """
         giphy_image = giphypop.translate(phrase=' '.join(cmd_args))
-        MAX_GIF_SIZE_IN_MB = int(os.environ.get('ROBORONYA_MAX_GIF_SIZE', '5'))
         size_in_mb = giphy_image.filesize * 1e-6
         print('GIF Size In MB => ', size_in_mb)
-        if size_in_mb > MAX_GIF_SIZE_IN_MB:
+        if size_in_mb > config.MAX_GIF_SIZE_IN_MB:
             kwargs['gif_url'] = giphy_image.bitly
             Roboronya._send_response(
                 conv,
@@ -150,22 +186,7 @@ class Commands(object):
                 **kwargs
             )
         else:
-            response = requests.get(giphy_image.media_url)
-            file_path = '{}.{}'.format(
-                os.path.join('runtime', 'images', str(uuid.uuid4())),
-                '.gif',
-            )
-
-            utils.create_path_if_not_exists(file_path)
-            with open(file_path, 'wb+') as img:
-                img.write(response.content)
-
-            Roboronya._send_response(
-                conv,
-                'Here\'s your gif {user_fullname}.',
-                image_file=open(file_path, 'rb+'),
-                **kwargs
-            )
+            _send_file(conv, giphy_image.media_url, **kwargs)
 
     @staticmethod
     @_log_command
@@ -248,3 +269,18 @@ class Commands(object):
         /caracola command: Alias for magicball.
         """
         Commands.magicball(*args, **kwargs)
+
+    @staticmethod
+    @_requires_args
+    @_log_command
+    @_failsafe
+    def gfycat(conv, message, cmd_args, **kwargs):
+        response = requests.get(
+            config.GIFYCAT_SEARCH_URL,
+            params={'search_text': ' '.join(cmd_args)}
+        )
+        response_json = response.json()
+        for gfycat_json in response_json.get('gfycats'):
+            if gfycat_json.get('max2mbGif'):
+                _send_file(conv, gfycat_json['max2mbGif'], **kwargs)
+                break

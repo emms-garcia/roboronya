@@ -10,6 +10,7 @@ import asyncio
 import hangups
 
 import commands
+import config
 import utils
 
 
@@ -24,7 +25,6 @@ class Roboronya(object):
     to support more commands / plugins.
     But it probably will...
     """
-    REFRESH_TOKEN_PATH = 'runtime/refresh_token.txt'
 
     def __init__(self):
         try:
@@ -42,7 +42,8 @@ class Roboronya(object):
             utils.get_auth_stdin_patched(
                 self._email,
                 password,
-                self.REFRESH_TOKEN_PATH)
+                config.REFRESH_TOKEN_PATH,
+            )
         )
 
     @asyncio.coroutine
@@ -137,4 +138,4 @@ if __name__ == '__main__':
         roboronya.run()
     except KeyboardInterrupt:
         print('Roboronya was stopped.')
-        shutil.rmtree('runtime')
+        shutil.rmtree(config.IMAGES_DIR)
