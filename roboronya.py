@@ -22,7 +22,7 @@ class Roboronya(object):
 
     def __init__(self):
         try:
-            email = os.environ['ROBORONYA_EMAIL']
+            self._email = os.environ['ROBORONYA_EMAIL']
             password = os.environ['ROBORONYA_PASSWORD']
         except KeyError as e:
             raise RoboronyaException(
@@ -34,7 +34,7 @@ class Roboronya(object):
 
         self._hangups = hangups.Client(
             utils.get_auth_stdin_patched(
-                email,
+                self._email,
                 password,
                 self.REFRESH_TOKEN_PATH)
         )
@@ -72,9 +72,11 @@ class Roboronya(object):
         }
 
     def _handle_message(self, conv, conv_event):
-        message = conv_event.text
         user = conv.get_user(conv_event.user_id)
+        if self._email in user.emails:
+            return
 
+        message = conv_event.text
         tokens = message.split(' ')
         commands_to_run = []
         for token in tokens:
