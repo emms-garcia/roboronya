@@ -1,1 +1,2 @@
+giphypop==0.2
 hangups==0.4.1

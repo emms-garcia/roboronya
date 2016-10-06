@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+__author__ = 'Emmanuel García'
+__title__ = 'roboronya'
+__version__ = '0.1'
+
 import os
 
 import asyncio
@@ -18,12 +23,11 @@ class Roboronya(object):
     to support more commands / plugins.
     But it probably will...
     """
-
     REFRESH_TOKEN_PATH = 'refresh_token.txt'
 
     def __init__(self):
         try:
-            email = os.environ['ROBORONYA_EMAIL']
+            self._email = os.environ['ROBORONYA_EMAIL']
             password = os.environ['ROBORONYA_PASSWORD']
         except KeyError as e:
             raise RoboronyaException(
@@ -35,7 +39,7 @@ class Roboronya(object):
 
         self._hangups = hangups.Client(
             utils.get_auth_stdin_patched(
-                email,
+                self._email,
                 password,
                 self.REFRESH_TOKEN_PATH)
         )
@@ -53,9 +57,10 @@ class Roboronya(object):
     def _send_response(conv, segments, **kwargs):
         asyncio.async(conv.send_message(
             [hangups.ChatMessageSegment(
-                segment.format(
+                segment['text'].format(
                     **kwargs
                 ),
+                link_target=segment.get('url')
             ) for segment in segments],
             image_file=kwargs.get('image_file'),
         ))
@@ -72,32 +77,51 @@ class Roboronya(object):
         }
 
     def _handle_message(self, conv, conv_event):
-        message = conv_event.text
         user = conv.get_user(conv_event.user_id)
+        if self._email in user.emails:
+            return
 
+        message = conv_event.text
         tokens = message.split(' ')
         commands_to_run = []
         for token in tokens:
             if '/' in token:
                 commands_to_run.append({
-                    'args': [conv, message],
+                    'args': [conv, message, []],
                     'name': token.replace('/', ''),
                 })
             else:
                 if commands_to_run:
-                    commands_to_run[-1]['args'].append(token)
+                    commands_to_run[-1]['args'][-1].append(token)
 
         kwargs = self._get_command_args(user)
         for command in commands_to_run:
+            kwargs['command_name'] = command['name']
             try:
                 command_func = getattr(commands, command['name'])
                 command_func(*command['args'], **kwargs)
             except AttributeError as e:
                 print(
-                    'Could not find command "{}". Error: {}'.format(
+                    'Could not find command "/{}". Error: {}'.format(
                         command['name'],
                         e,
                     )
+                )
+            except Exception as e:
+                print(
+                    'Something went horribly wrong with the /{} command. '
+                    'Error: {}'.format(command['name'], e)
+                )
+                Roboronya._send_response(
+                    conv,
+                    [{
+                        'text': (
+                            'Sorry {user_fullname} something went wrong '
+                            'with your /{command_name}.'
+                        )
+
+                    }],
+                    **kwargs
                 )
 
     def run(self):
@@ -110,4 +134,8 @@ class Roboronya(object):
 
 
 if __name__ == '__main__':
-    Roboronya().run()
+    roboronya = Roboronya()
+    try:
+        roboronya.run()
+    except KeyboardInterrupt:
+        print('Roboronya was stopped.')
