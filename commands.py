@@ -44,10 +44,16 @@ def _failsafe(fn):
         try:
             return fn(conv, message, cmd_args, **kwargs)
         except Exception as e:
-            print(e)
+            print(
+                'Failed to execute command: {}. '
+                'Error: {}.'.format(
+                    kwargs['command_name'],
+                    e,
+                )
+            )
             Roboronya._send_response(
                 conv,
-                [{'text': error_message}],
+                error_message,
                 **kwargs
             )
     return wrapper
@@ -110,14 +116,11 @@ def help(conv, message, cmd_args, **kwargs):
     /gif command. Should send the first gif found from an API
     (probably giphy) that matches the argument words.
     """
-    response = []
-    for cmd_name, help_message in COMMAND_HELP.items():
-        response.append(
-            '**/{}**: {}'.format(cmd_name, help_message)
-        )
-
     Roboronya._send_response(
-        conv, '\n'.join(response), **kwargs
+        conv, '\n'.join([
+            '**/{}**: {}'.format(cmd_name, help_message)
+            for cmd_name, help_message in COMMAND_HELP.items()
+        ]), **kwargs
     )
 
 
