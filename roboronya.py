@@ -6,6 +6,9 @@ __version__ = '0.1'
 
 import os
 import shutil
+import sys
+import time
+import threading
 import uuid
 
 import asyncio
@@ -13,7 +16,7 @@ import hangups
 import requests
 
 import commands
-from config import IMAGES_DIR, REFRESH_TOKEN_PATH
+from config import IMAGES_DIR, MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH
 from utils import create_path_if_not_exists, get_auth_stdin_patched
 
 
@@ -29,45 +32,31 @@ class Roboronya(object):
     But it probably will...
     """
 
-    def __init__(self):
-        try:
-            self._email = os.environ['ROBORONYA_EMAIL']
-            password = os.environ['ROBORONYA_PASSWORD']
-        except KeyError as e:
-            raise RoboronyaException(
-                'Failed to retrieve credentials from env. '
-                'You must set the ROBORONYA_EMAIL and '
-                'ROBORONYA_PASSWORD env variables. '
-                'Error: {} not found.'.format(e)
-            ) from None
-
-        self._hangups = hangups.Client(
-            get_auth_stdin_patched(
-                self._email,
-                password,
-                REFRESH_TOKEN_PATH
-            )
-        )
-
-    @asyncio.coroutine
-    def _on_hangups_connect(self):
+    async def _on_hangups_connect(self):
         print('Connected.')
         self._user_list, self._conv_list = (
-            yield from hangups.conversation.
+            await hangups.conversation.
             build_user_conversation_list(self._hangups)
         )
         self._conv_list.on_event.add_observer(
-            lambda x: asyncio.async(self._on_hangups_event(x))
+            self._on_hangups_event
         )
 
-    @asyncio.coroutine
-    def _on_hangups_event(self, conv_event):
+    async def _on_disconnect(self):
+        print('Disconnected.')
+
+    async def _on_hangups_event(self, conv_event):
         print('Conversation event received.')
         if isinstance(conv_event, hangups.ChatMessageEvent):
             conv = self._conv_list.get(conv_event.conversation_id)
-            self._handle_message(conv, conv_event)
+            threading.Thread(
+                args=(conv, conv_event),
+                target=self._handle_message,
+            ).start()
 
     def _handle_message(self, conv, conv_event):
+        asyncio.set_event_loop(self._loop)
+
         user = conv.get_user(conv_event.user_id)
         if self._email in user.emails:
             return
@@ -107,13 +96,10 @@ class Roboronya(object):
                 )
                 Roboronya._send_response(
                     conv,
-                    [{
-                        'text': (
-                            'Sorry {user_fullname} something went wrong '
-                            'with your /{command_name}.'
-                        )
-
-                    }],
+                    (
+                        'Sorry {user_fullname} something went wrong '
+                        'with your /{command_name}.'
+                    ),
                     **kwargs
                 )
 
@@ -151,19 +137,73 @@ class Roboronya(object):
             **kwargs
         )
 
-    def run(self):
-        self._hangups.on_connect.add_observer(
-            lambda: asyncio.async(self._on_hangups_connect())
+    def login(self):
+        try:
+            self._email = os.environ['ROBORONYA_EMAIL']
+            password = os.environ['ROBORONYA_PASSWORD']
+        except KeyError as e:
+            raise RoboronyaException(
+                'Failed to retrieve credentials from env. '
+                'You must set the ROBORONYA_EMAIL and '
+                'ROBORONYA_PASSWORD env variables. '
+                'Error: {} not found.'.format(e)
+            ) from None
+
+        return get_auth_stdin_patched(
+            self._email,
+            password,
+            REFRESH_TOKEN_PATH
         )
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._hangups.connect())
+    def run(self):
+        cookies = self.login()
+        if cookies:
+            self._loop = asyncio.get_event_loop()
+            for retry in range(MAX_RECONNECT_RETRIES):
+                try:
+                    self._hangups = hangups.Client(cookies)
 
+                    self._hangups.on_connect.add_observer(
+                        self._on_hangups_connect
+                    )
+                    self._hangups.on_disconnect.add_observer(
+                        self._on_disconnect
+                    )
+
+                    self._loop.run_until_complete(
+                        self._hangups.connect()
+                    )
+                except Exception as e:
+                    print(
+                        'Roboronya disconnected. Error: {}'.format(
+                            e
+                        )
+                    )
+                    print(
+                        'Retrying {}/{}...'.format(
+                            retry + 1,
+                            MAX_RECONNECT_RETRIES
+                        )
+                    )
+                    time.sleep(5 + retry * 5)
+
+            print('Roboronya is exiting.')
+            sys.exit(0)
+
+        print('Invalid login.')
+        sys.exit(0)
+
+    def stop(self):
+        print('Roboronya was stopped.')
+        if os.path.exists(IMAGES_DIR):
+            shutil.rmtree(IMAGES_DIR)
+        asyncio.async(
+            self._hangups.disconnect()
+        ).add_done_callback(lambda future: future.result())
 
 if __name__ == '__main__':
     roboronya = Roboronya()
     try:
         roboronya.run()
     except KeyboardInterrupt:
-        print('Roboronya was stopped.')
-        shutil.rmtree(IMAGES_DIR)
+        roboronya.stop()

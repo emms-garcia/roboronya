@@ -11,6 +11,7 @@ RUNTIME_DIR = os.path.join(CWD, 'runtime')
 IMAGES_DIR = os.path.join(RUNTIME_DIR, 'images')
 REFRESH_TOKEN_PATH = os.path.join(RUNTIME_DIR, 'refresh_token.txt')
 
+MAX_RECONNECT_RETRIES = 5
 
 """
     Command specific configuration.
