@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 import random
-import os
-import uuid
 
 import giphypop
 import requests
 
-import config
-from roboronya import Roboronya
-from utils import create_path_if_not_exists
-
+from config import GIFYCAT_SEARCH_URL, MAX_GIF_SIZE_IN_MB
+import roboronya
 
 """
     Helpers for the commands.
@@ -64,7 +60,7 @@ def _failsafe(fn):
                     e
                 )
             )
-            Roboronya._send_response(
+            roboronya.Roboronya._send_response(
                 conv,
                 error_message,
                 **kwargs
@@ -98,7 +94,7 @@ def _requires_args(fn):
                     kwargs['command_name']
                 )
             )
-            Roboronya._send_response(
+            roboronya.Roboronya._send_response(
                 conv,
                 (
                     'Sorry {user_fullname}, the /{command_name} '
@@ -109,31 +105,6 @@ def _requires_args(fn):
             return
         return fn(conv, cmd_args, **kwargs)
     return wrapper
-
-
-def _send_file(conv, media_url, **kwargs):
-    """
-    Send a file to the conversation.
-    """
-    response = requests.get(media_url)
-    file_path = '{}.{}'.format(
-        os.path.join(
-            config.IMAGES_DIR,
-            str(uuid.uuid4())
-        ),
-        '.gif'
-    )
-
-    create_path_if_not_exists(file_path)
-    with open(file_path, 'wb+') as img:
-        img.write(response.content)
-
-    Roboronya._send_response(
-        conv,
-        'Here\'s your gif {user_fullname}.',
-        image_file=open(file_path, 'rb+'),
-        **kwargs
-    )
 
 
 """
@@ -155,7 +126,7 @@ class Commands(object):
         /gif command. Should send the first gif found from an API
         (probably giphy) that matches the argument words.
         """
-        Roboronya._send_response(
+        roboronya.Roboronya._send_response(
             conv, '\n'.join([
                 '**/{}**: {}'.format(cmd_name, help_message)
                 for cmd_name, help_message in COMMAND_HELP.items()
@@ -175,9 +146,9 @@ class Commands(object):
         giphy_image = giphypop.translate(phrase=' '.join(cmd_args))
         size_in_mb = giphy_image.filesize * 1e-6
         print('GIF Size In MB => ', size_in_mb)
-        if size_in_mb > config.MAX_GIF_SIZE_IN_MB:
+        if size_in_mb > MAX_GIF_SIZE_IN_MB:
             kwargs['gif_url'] = giphy_image.bitly
-            Roboronya._send_response(
+            roboronya.Roboronya._send_response(
                 conv,
                 (
                     'Sorry {user_fullname} gif is too large. '
@@ -186,7 +157,11 @@ class Commands(object):
                 **kwargs
             )
         else:
-            _send_file(conv, giphy_image.media_url, **kwargs)
+            roboronya.Roboronya._send_file(
+                conv,
+                giphy_image.media_url,
+                **kwargs
+            )
 
     @staticmethod
     @_log_command
@@ -195,7 +170,7 @@ class Commands(object):
         """
         /love command. From Robornya with love.
         """
-        Roboronya._send_response(
+        roboronya.Roboronya._send_response(
             conv,
             'I love you {user_fullname} <3.',
             **kwargs
@@ -209,7 +184,7 @@ class Commands(object):
         /cointoss command. Tosses a coin to make a decision as gods should,
         based on luck.
         """
-        Roboronya._send_response(
+        roboronya.Roboronya._send_response(
             conv,
             'heads' if random.getrandbits(1) == 0 else 'tails',
             **kwargs
@@ -222,7 +197,7 @@ class Commands(object):
         """
         /ping command. Check bot status.
         """
-        Roboronya._send_response(
+        roboronya.Roboronya._send_response(
             conv,
             '**Pong!**',
             **kwargs
@@ -258,7 +233,7 @@ class Commands(object):
             'Very doubtful {user_fullname}'
         ]
 
-        Roboronya._send_response(
+        roboronya.Roboronya._send_response(
             conv,
             random.choice(answers),
             **kwargs
@@ -279,12 +254,15 @@ class Commands(object):
         /gfycat command: Like the /gif command but instead
         of using giphy it uses gfycat.
         """
-        response = requests.get(
-            config.GIFYCAT_SEARCH_URL,
+        response_json = requests.get(
+            GIFYCAT_SEARCH_URL,
             params={'search_text': ' '.join(cmd_args)}
-        )
-        response_json = response.json()
-        for gfycat_json in response_json.get('gfycats'):
-            if gfycat_json.get('max2mbGif'):
-                _send_file(conv, gfycat_json['max2mbGif'], **kwargs)
-                break
+        ).json()
+        gfycats = response_json.get('gfycats', [])
+        if gfycats:
+            gfycat_json = random.choice(gfycats)
+            roboronya.Roboronya._send_file(
+                conv,
+                gfycat_json['max2mbGif'],
+                **kwargs
+            )

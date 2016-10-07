@@ -5,13 +5,15 @@ __version__ = '0.1'
 
 import os
 import shutil
+import uuid
 
 import asyncio
 import hangups
+import requests
 
 import commands
-import config
-import utils
+from config import IMAGES_DIR, REFRESH_TOKEN_PATH
+from utils import create_path_if_not_exists, get_auth_stdin_patched
 
 
 class RoboronyaException(Exception):
@@ -39,10 +41,10 @@ class Roboronya(object):
             ) from None
 
         self._hangups = hangups.Client(
-            utils.get_auth_stdin_patched(
+            get_auth_stdin_patched(
                 self._email,
                 password,
-                config.REFRESH_TOKEN_PATH
+                REFRESH_TOKEN_PATH
             )
         )
 
@@ -123,6 +125,31 @@ class Roboronya(object):
             image_file=kwargs.get('image_file')
         ))
 
+    @staticmethod
+    def _send_file(conv, media_url, **kwargs):
+        """
+        Send a file to the conversation.
+        """
+        response = requests.get(media_url)
+        file_path = '{}.{}'.format(
+            os.path.join(
+                IMAGES_DIR,
+                str(uuid.uuid4())
+            ),
+            '.gif'
+        )
+
+        create_path_if_not_exists(file_path)
+        with open(file_path, 'wb+') as img:
+            img.write(response.content)
+
+        Roboronya._send_response(
+            conv,
+            'Here\'s your gif {user_fullname}.',
+            image_file=open(file_path, 'rb+'),
+            **kwargs
+        )
+
     def run(self):
         self._hangups.on_connect.add_observer(
             lambda: asyncio.async(self._on_hangups_connect())
@@ -138,4 +165,4 @@ if __name__ == '__main__':
         roboronya.run()
     except KeyboardInterrupt:
         print('Roboronya was stopped.')
-        shutil.rmtree(config.IMAGES_DIR)
+        shutil.rmtree(IMAGES_DIR)
