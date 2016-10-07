@@ -41,7 +41,7 @@ COMMAND_HELP = {
         'For faster gifs, this only sends back the gif url.'
     ),
     'cholify': (
-        'Roboronya will use her */Automated Cholification Algorithm/ (Patent Pending) to translate your text to a more sophisticated language.'
+        'Roboronya will use her *Automated Cholification Algorithm* (Patent Pending) to translate your text to a more sophisticated language.'
     )
 }
 
