@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Emmanuel García'
 __title__ = 'roboronya'
+__license__ = 'MIT'
 __version__ = '0.1'
 
 import os
