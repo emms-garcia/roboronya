@@ -36,6 +36,9 @@ COMMAND_HELP = {
     ),
     'caracola': (
         'Alias for */magicball*.'
+    ),
+    'fastgif': (
+        'For faster gifs, this only sends back the gif url.'
     )
 }
 
@@ -162,6 +165,28 @@ class Commands(object):
                 giphy_image.media_url,
                 **kwargs
             )
+
+    @staticmethod
+    @_requires_args
+    @_log_command
+    @_failsafe
+    def fastgif(conv, cmd_args, **kwargs):
+        """
+        /gif command. Translates commands argument words as
+        gifs using giphy.
+        """
+        giphy_image = giphypop.translate(phrase=' '.join(cmd_args))
+        
+        
+        kwargs['gif_url'] = giphy_image.media_url
+        roboronya.Roboronya._send_response(
+            conv,
+            (
+                 'Here is your URL to the gif {user_fullname}: {gif_url} ... love you btw'
+            ),
+            **kwargs
+        )
+       
 
     @staticmethod
     @_log_command
