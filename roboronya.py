@@ -42,7 +42,7 @@ class Roboronya(object):
             utils.get_auth_stdin_patched(
                 self._email,
                 password,
-                config.REFRESH_TOKEN_PATH,
+                config.REFRESH_TOKEN_PATH
             )
         )
 
@@ -74,8 +74,8 @@ class Roboronya(object):
         for token in message.split():
             if '/' in token:
                 possible_commands.append({
-                    'args': [conv, message, []],
-                    'name': token.replace('/', ''),
+                    'args': [conv, []],
+                    'name': token.replace('/', '')
                 })
             else:
                 if possible_commands:
@@ -94,7 +94,7 @@ class Roboronya(object):
                 print(
                     'Could not find command "/{}". Error: {}'.format(
                         command['name'],
-                        e,
+                        e
                     )
                 )
             except Exception as e:

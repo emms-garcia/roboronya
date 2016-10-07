@@ -53,15 +53,15 @@ def _failsafe(fn):
         'your command: "{original_message}".'
     )
 
-    def wrapper(conv, message, cmd_args, **kwargs):
+    def wrapper(conv, cmd_args, **kwargs):
         try:
-            return fn(conv, message, cmd_args, **kwargs)
+            return fn(conv, cmd_args, **kwargs)
         except Exception as e:
             print(
                 'Failed to execute command: {}. '
                 'Error: {}.'.format(
                     kwargs['command_name'],
-                    e,
+                    e
                 )
             )
             Roboronya._send_response(
@@ -76,14 +76,14 @@ def _log_command(fn):
     """
         Decorator to log running command data.
     """
-    def wrapper(conv, message, cmd_args, **kwargs):
+    def wrapper(conv, cmd_args, **kwargs):
         print(
             'Running /{} command with arguments: [{}].'.format(
                 kwargs['command_name'],
                 ', '.join(cmd_args)
             )
         )
-        return fn(conv, message, cmd_args, **kwargs)
+        return fn(conv, cmd_args, **kwargs)
     return wrapper
 
 
@@ -91,7 +91,7 @@ def _requires_args(fn):
     """
         Decorator to validate commands that require arguments.
     """
-    def wrapper(conv, message, cmd_args, **kwargs):
+    def wrapper(conv, cmd_args, **kwargs):
         if not cmd_args:
             print(
                 'The command /{} requires arguments to work.'.format(
@@ -107,7 +107,7 @@ def _requires_args(fn):
                 **kwargs
             )
             return
-        return fn(conv, message, cmd_args, **kwargs)
+        return fn(conv, cmd_args, **kwargs)
     return wrapper
 
 
@@ -121,7 +121,7 @@ def _send_file(conv, media_url, **kwargs):
             config.IMAGES_DIR,
             str(uuid.uuid4())
         ),
-        '.gif',
+        '.gif'
     )
 
     create_path_if_not_exists(file_path)
@@ -137,10 +137,9 @@ def _send_file(conv, media_url, **kwargs):
 
 
 """
-    Implemented commands. Any /command_name found in message (and
+    Implemented commands. Any /command_name found in a message (and
     arguments) will be redirected here. Parameters are (in order):
     - conv: hangups.conversation.Conversation object.
-    - message: original string message that triggered the command.
     - cmd_args (optional): arguments given for the command, or
     in other words any following words written after the command.
 """
@@ -151,7 +150,7 @@ class Commands(object):
     @staticmethod
     @_log_command
     @_failsafe
-    def help(conv, message, cmd_args, **kwargs):
+    def help(conv, cmd_args, **kwargs):
         """
         /gif command. Should send the first gif found from an API
         (probably giphy) that matches the argument words.
@@ -160,14 +159,15 @@ class Commands(object):
             conv, '\n'.join([
                 '**/{}**: {}'.format(cmd_name, help_message)
                 for cmd_name, help_message in COMMAND_HELP.items()
-            ]), **kwargs
+            ]),
+            **kwargs
         )
 
     @staticmethod
     @_requires_args
     @_log_command
     @_failsafe
-    def gif(conv, message, cmd_args, **kwargs):
+    def gif(conv, cmd_args, **kwargs):
         """
         /gif command. Translates commands argument words as
         gifs using giphy.
@@ -191,7 +191,7 @@ class Commands(object):
     @staticmethod
     @_log_command
     @_failsafe
-    def love(conv, message, cmd_args, **kwargs):
+    def love(conv, cmd_args, **kwargs):
         """
         /love command. From Robornya with love.
         """
@@ -204,7 +204,7 @@ class Commands(object):
     @staticmethod
     @_log_command
     @_failsafe
-    def cointoss(conv, message, cmd_args, **kwargs):
+    def cointoss(conv, cmd_args, **kwargs):
         """
         /cointoss command. Tosses a coin to make a decision as gods should,
         based on luck.
@@ -218,7 +218,7 @@ class Commands(object):
     @staticmethod
     @_log_command
     @_failsafe
-    def ping(conv, message, cmd_args, **kwargs):
+    def ping(conv, cmd_args, **kwargs):
         """
         /ping command. Check bot status.
         """
@@ -231,7 +231,7 @@ class Commands(object):
     @staticmethod
     @_log_command
     @_failsafe
-    def magicball(conv, message, cmd_args, **kwargs):
+    def magicball(conv, cmd_args, **kwargs):
         """
         /magicball command: Randomly answer like a magic ball.
         """
@@ -246,7 +246,7 @@ class Commands(object):
             'Outlook good {user_fullname}',
             'Yes {user_fullname}',
             'Signs point to yes {user_fullname}',
-            'Reply hazy try again {user_fullname}',
+            'Reply hazy, try again {user_fullname}',
             'Ask again later {user_fullname}',
             'Better not tell you now {user_fullname}',
             'Cannot predict now {user_fullname}',
@@ -274,7 +274,11 @@ class Commands(object):
     @_requires_args
     @_log_command
     @_failsafe
-    def gfycat(conv, message, cmd_args, **kwargs):
+    def gfycat(conv, cmd_args, **kwargs):
+        """
+        /gfycat command: Like the /gif command but instead
+        of using giphy it uses gfycat.
+        """
         response = requests.get(
             config.GIFYCAT_SEARCH_URL,
             params={'search_text': ' '.join(cmd_args)}
