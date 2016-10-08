@@ -1,7 +1,16 @@
 language: python
 python:
-  - "3.3.6"
-# command to install dependencies
-install: "pip install -r requirements.txt"
-# command to run tests
+- 3.3.6
+install: pip install -r requirements.txt
 script: pytest
+deploy:
+  provider: openshift
+  user: emmanuel.garcia.solis@gmail.com
+  password:
+    secure: qVZiX7s2IOONhdkNhCl9wVarmkFliw8oHg4WJdLJlJrBoNFhf/URpvDnlcLwuBU3A1V4wIxdBtQe7xO+uKQtpcjQRiwP5+UPKzcAxpoWINbshWGH1FT+7v+2ixms7GeS6UCkuq1UX2mR6YM807I0BqMbmZr0d1qhiyckt9lGemtAc7yU3aboN58RmHKzK2gxQ8k8xe/IiGTeyQgIltYbTqvaHyLb0bfHvi51bmoQMhW6Sk96RJIMHte4DE1FCsWTiir+n5VurSjMfDa4fkDRLPJvCKQGpJp/9uZ/K9pk48yGasoMo575CC6iGSBrp2BnyQRL1MyJV62+HMMv15OCWZ4xPZstX85M91kqm+bgtZSWboARciv/JuGA07uukhn4v6lYSPcrRB8u2vCVfdyracC/FEjtSVVqNwK4CS3Fx1/d9VpNDk6INmt+fkEF9K/rxFuQ1eT1pZM6LxQziOO0vsySRfbxF/DvYlCxkT5l9ieRNsbCdszKp4ZKprnFsSc+ruU1TeM3hK+LTtauEsMP1qp7OuhUajPCz+pU6qoZdtJ6pZIJMSoo4eUd2Yz9zS/gG9jXe8Xpvb0s/IekbJV2FLNcAT8dlG6mY/phsu4562xfRQ12Ag/xQLPfx8jlF3Ipvu1tMAbztsNU4l54ikVUsHmzFacr/0kC8oMG1BtgYY8=
+  app:
+    roboronya
+  domain: emmpire
+  on:
+    branch: production
+    repo: synnick/roboronya
