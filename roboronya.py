@@ -16,7 +16,10 @@ import hangups
 import requests
 
 from commands import Commands
-from config import IMAGES_DIR, MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH
+from config import (
+    IMAGES_DIR, MAX_COMMANDS_PER_MESSAGE,
+    MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH,
+)
 from utils import create_path_if_not_exists
 
 
@@ -79,6 +82,18 @@ class Roboronya(object):
             'original_message': message,
             'user_fullname': user.full_name,
         }
+
+        if len(possible_commands) > MAX_COMMANDS_PER_MESSAGE:
+            kwargs['num_cmds'] = MAX_COMMANDS_PER_MESSAGE
+            return self.send_message(
+                conv,
+                (
+                    'Sorry {user_fullname} I can only process '
+                    '{num_cmds} command(s) per message.'
+                ),
+                **kwargs
+            )
+
         for command in possible_commands:
             kwargs['command_name'] = command['name']
             try:
@@ -96,7 +111,7 @@ class Roboronya(object):
                     'Something went horribly wrong with the /{} command. '
                     'Error: {}'.format(command['name'], e)
                 )
-                self._send_message(
+                self.send_message(
                     conv,
                     (
                         'Sorry {user_fullname} something went wrong '
@@ -105,7 +120,7 @@ class Roboronya(object):
                     **kwargs
                 )
 
-    def _send_message(self, conv, text, **kwargs):
+    def send_message(self, conv, text, **kwargs):
         asyncio.async(conv.send_message(
             hangups.ChatMessageSegment.from_str(
                 text.format(**kwargs)
@@ -113,7 +128,7 @@ class Roboronya(object):
             image_file=kwargs.get('image_file')
         ))
 
-    def _send_file(self, conv, text, media_url, **kwargs):
+    def send_file(self, conv, text, media_url, **kwargs):
         """
         Send a file to the conversation.
         """
@@ -130,7 +145,7 @@ class Roboronya(object):
         with open(file_path, 'wb+') as img:
             img.write(response.content)
 
-        self._send_message(
+        self.send_message(
             conv,
             text,
             image_file=open(file_path, 'rb+'),
