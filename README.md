@@ -8,7 +8,7 @@ incoming chats of that account to look for [implemented commands](https://github
 
 ## Installation
 
-Installation is fairly simple for those familiar with Python. A `requirements.txt` file is included with the dependencies that `roboronya` uses. Since `hangups` uses `Python3`, this project is implemented in `Python3` as well, currently using the `3.3.6` version. Other than that the only extra requirement is a Google Gmail account, whose credentials `hangups` will prompt for when running `roboronya`.
+Installation is fairly simple for those familiar with Python. A `requirements.txt` file is included with the dependencies that `roboronya` uses. Since `hangups` uses `Python3`, this project is implemented in `Python3` as well, currently using the `3.3.6` version. Other than that, the only extra requirement is a Google Gmail account, whose credentials `hangups` will prompt for when running `roboronya` for a first time (or when the refresh token expires).
 
 **Please Note: These are not used for any malign purpose for `roboronya`, they are just used to connect to hangouts
 via `hangups`.**
@@ -23,7 +23,7 @@ After a correct login, `roboronya` will connect and listen to incoming events, c
 /gif cute corgi
 ```
 
-For any given command, the following words (until before the next command) are parsed and provided to the command "interfaces" (which are plan python functions to whose `/{command_name}` is redirected.
+For any given command, the following words (until before the next command) are parsed and provided to the command "interfaces" (which are plain python functions to whose `/{command_name}` is redirected.
 
 [To create a new command a simple function is required!](https://github.com/synnick/roboronya/blob/master/commands.py#L253).
 
