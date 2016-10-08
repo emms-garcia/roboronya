@@ -23,7 +23,7 @@ After a correct login, `roboronya` will connect and listen to incoming events, c
 /gif cute corgi
 ```
 
-For any given command, the following words (until before the next command) are parsed and provided to the command "interfaces" (which are plain python functions to whose `/{command_name}` is redirected.
+For any given command, the following words (until before the next command) are parsed and provided to the command "interfaces" (which are plain Python functions for which a `/{command_name}` is redirected.
 
 [To create a new command a simple function is required!](https://github.com/synnick/roboronya/blob/master/commands.py#L253).
 
