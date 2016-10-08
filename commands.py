@@ -84,7 +84,7 @@ def _failsafe(fn):
                     e
                 )
             )
-            roboronya.send_message(
+            roboronya._send_message(
                 conv,
                 error_message,
                 **kwargs
@@ -133,7 +133,7 @@ def _requires_args(fn):
                     kwargs['command_name']
                 )
             )
-            roboronya.send_message(
+            roboronya._send_message(
                 conv,
                 (
                     'Sorry {user_fullname}, the /{command_name} '
@@ -164,7 +164,7 @@ class Commands(object):
         """
         /help command. Shows the available commands.
         """
-        roboronya.send_message(
+        roboronya._send_message(
             conv, '\n'.join([
                 '**/{}**: {}'.format(command['name'], command['description'])
                 for command in COMMAND_HELP
@@ -182,38 +182,23 @@ class Commands(object):
         gifs using giphy.
         """
         giphy_image = giphypop.translate(phrase=' '.join(cmd_args))
-        if giphy_image:
-            size_in_mb = giphy_image.filesize * 1e-6
-            if size_in_mb > MAX_GIF_SIZE_IN_MB:
-                kwargs['gif_url'] = giphy_image.bitly
-                roboronya.send_message(
-                    conv,
-                    (
-                        'Sorry {user_fullname} gif is too large. '
-                        'Here\'s the link instead: {gif_url}'
-                    ),
-                    **kwargs
-                )
-            else:
-                kwargs['file_extension'] = 'gif'
-                roboronya.send_file(
-                    conv,
-                    'Here\'s your gif {user_fullname}.',
-                    giphy_image.media_url,
-                    **kwargs
-                )
-        else:
-            print(
-                'Could not not find a gif for keywords: '
-                '{}'.format(cmd_args)
-            )
-            kwargs['cmd_args'] = cmd_args
-            roboronya.send_message(
+        size_in_mb = giphy_image.filesize * 1e-6
+        if size_in_mb > MAX_GIF_SIZE_IN_MB:
+            kwargs['gif_url'] = giphy_image.bitly
+            roboronya._send_message(
                 conv,
                 (
-                    'Sorry {user_fullname} I could not find '
-                    'a gif for your keywords: {cmd_args}.'
+                    'Sorry {user_fullname} gif is too large. '
+                    'Here\'s the link instead: {gif_url}'
                 ),
+                **kwargs
+            )
+        else:
+            kwargs['file_extension'] = 'gif'
+            roboronya._send_file(
+                conv,
+                'Here\'s your gif {user_fullname}.',
+                giphy_image.media_url,
                 **kwargs
             )
 
@@ -226,7 +211,7 @@ class Commands(object):
         /fastgif command. Searches for a gif and sends the url.
         """
         kwargs['gif_url'] = _get_gif_url(cmd_args)
-        roboronya.send_message(
+        roboronya._send_message(
             conv,
             (
                 'Here is your URL to the gif {user_fullname}: '
@@ -242,7 +227,7 @@ class Commands(object):
         """
         /love command. From Robornya with love.
         """
-        roboronya.send_message(
+        roboronya._send_message(
             conv,
             'I love you {user_fullname} <3.',
             **kwargs
@@ -256,7 +241,7 @@ class Commands(object):
         /cointoss command. Tosses a coin to make a decision as gods should,
         based on luck.
         """
-        roboronya.send_message(
+        roboronya._send_message(
             conv,
             'heads' if random.getrandbits(1) == 0 else 'tails',
             **kwargs
@@ -269,7 +254,7 @@ class Commands(object):
         """
         /ping command. Check bot status.
         """
-        roboronya.send_message(
+        roboronya._send_message(
             conv,
             '**Pong!**',
             **kwargs
@@ -305,7 +290,7 @@ class Commands(object):
             'Very doubtful {user_fullname}'
         ]
 
-        roboronya.send_message(
+        roboronya._send_message(
             conv,
             random.choice(answers),
             **kwargs
@@ -356,7 +341,7 @@ class Commands(object):
                 choloWords.append(choloWord)
             return choloWords
 
-        roboronya.send_message(
+        roboronya._send_message(
             conv,
             ' '.join(_cholify(cmd_args)),
             **kwargs
@@ -374,14 +359,14 @@ class Commands(object):
         gif_url = _get_gif_url(cmd_args)
         if gif_url:
             kwargs['file_extension'] = 'gif'
-            roboronya.send_file(
+            roboronya._send_file(
                 conv,
                 'Here\'s your gif {user_fullname}.',
                 gif_url,
                 **kwargs
             )
         else:
-            roboronya.send_message(
+            roboronya._send_message(
                 conv,
                 'Sorry {user_fullname}, I couldn\'t find'
                 ' a gif for you.',
