@@ -96,7 +96,7 @@ class Roboronya(object):
                     'Something went horribly wrong with the /{} command. '
                     'Error: {}'.format(command['name'], e)
                 )
-                Roboronya.__send_message(
+                self._send_message(
                     conv,
                     (
                         'Sorry {user_fullname} something went wrong '
