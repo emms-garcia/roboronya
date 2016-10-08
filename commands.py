@@ -5,45 +5,63 @@ import giphypop
 import requests
 
 from config import GIFYCAT_SEARCH_URL, MAX_GIF_SIZE_IN_MB
-import roboronya
 
 """
     Helpers for the commands.
 """
 
-COMMAND_HELP = {
-    'gif': (
-        'Searches for a gif (from Giphy) that matches the words '
-        'following the command. *i. e. /gif cat*'
-    ),
-    'cointoss': (
-        'Randomly toss a coin. 50-50 chances.'
-    ),
-    'ping': (
-        'Check if bot is online. Should always work.'
-    ),
-    'love': (
-        'From Roboronya with love.'
-    ),
-    'gfycat': (
-        'Searches for a gif (from Gfycat) that matches the words '
-        'following the command. *i. e. /gfycat dog*. Unlike /gif '
-        'this command ensures gifs are under 2MB, so they should '
-        'be relatively fast.'
-    ),
-    'magicball': (
-        'Ask Roboronya for advice. She knows more than she tells.'
-    ),
-    'caracola': (
-        'Alias for */magicball*.'
-    ),
-    'fastgif': (
-        'For faster gifs, this only sends back the gif url.'
-    ),
-    'cholify': (
-        'Roboronya will use her *Automated Cholification Algorithm* (Patent Pending) to translate your text to a more sophisticated language.'
-    )
-}
+COMMAND_HELP = [
+    {
+        'name': 'ping',
+        'description': 'Check if bot is online. Should always work.'
+    },
+    {
+        'name': 'love',
+        'description': 'From Roboronya with love.'
+    },
+    {
+        'name': 'cointoss',
+        'description': 'Randomly toss a coin. 50-50 chances.'
+    },
+    {
+        'name': 'magicball',
+        'description': (
+            'Ask Roboronya for advice. She knows more than she tells.'
+        ),
+    },
+    {
+        'name': 'caracola',
+        'description': (
+            'Alias for */magicball*.'
+        )
+    },
+    {
+        'name': 'fastgif',
+        'description': 'For faster gifs, this only sends back the gif url.'
+    },
+    {
+        'name': 'gif',
+        'description': (
+            'Searches for a gif (from Giphy) that matches the words '
+            'following the command. *i. e. /gif cat*'
+        )
+    },
+    {
+        'name': 'gfycat',
+        'description': (
+            'Searches for a gif (from Gfycat) that matches the words '
+            'following the command. *i. e. /gfycat dog*.'
+        ),
+    },
+    {
+        'name': 'cholify',
+        'description': (
+            'Roboronya will use her *Automated Cholification Algorithm* '
+            '(Patent Pending) to translate your text to a more sophisticated'
+            ' language.'
+        )
+    }
+]
 
 
 def _failsafe(fn):
@@ -55,9 +73,9 @@ def _failsafe(fn):
         'your command: "{original_message}".'
     )
 
-    def wrapper(conv, cmd_args, **kwargs):
+    def wrapper(roboronya, conv, cmd_args, **kwargs):
         try:
-            return fn(conv, cmd_args, **kwargs)
+            return fn(roboronya, conv, cmd_args, **kwargs)
         except Exception as e:
             print(
                 'Failed to execute command: {}. '
@@ -66,7 +84,7 @@ def _failsafe(fn):
                     e
                 )
             )
-            roboronya.Roboronya._send_response(
+            roboronya._send_message(
                 conv,
                 error_message,
                 **kwargs
@@ -74,18 +92,33 @@ def _failsafe(fn):
     return wrapper
 
 
+def _get_gif_url(keywords):
+    """
+    Get an URL to a gif, given some keywords.
+    """
+    response_json = requests.get(
+        GIFYCAT_SEARCH_URL,
+        params={'search_text': ' '.join(keywords)}
+    ).json()
+    gfycats = response_json.get('gfycats', [])
+    if gfycats:
+        gfycat_json = random.choice(gfycats)
+        return gfycat_json['max2mbGif']
+    return None
+
+
 def _log_command(fn):
     """
         Decorator to log running command data.
     """
-    def wrapper(conv, cmd_args, **kwargs):
+    def wrapper(roboronya, conv, cmd_args, **kwargs):
         print(
             'Running /{} command with arguments: [{}].'.format(
                 kwargs['command_name'],
                 ', '.join(cmd_args)
             )
         )
-        return fn(conv, cmd_args, **kwargs)
+        return fn(roboronya, conv, cmd_args, **kwargs)
     return wrapper
 
 
@@ -93,14 +126,14 @@ def _requires_args(fn):
     """
         Decorator to validate commands that require arguments.
     """
-    def wrapper(conv, cmd_args, **kwargs):
+    def wrapper(roboronya, conv, cmd_args, **kwargs):
         if not cmd_args:
             print(
                 'The command /{} requires arguments to work.'.format(
                     kwargs['command_name']
                 )
             )
-            roboronya.Roboronya._send_response(
+            roboronya._send_message(
                 conv,
                 (
                     'Sorry {user_fullname}, the /{command_name} '
@@ -109,7 +142,7 @@ def _requires_args(fn):
                 **kwargs
             )
             return
-        return fn(conv, cmd_args, **kwargs)
+        return fn(roboronya, conv, cmd_args, **kwargs)
     return wrapper
 
 
@@ -127,15 +160,14 @@ class Commands(object):
     @staticmethod
     @_log_command
     @_failsafe
-    def help(conv, cmd_args, **kwargs):
+    def help(roboronya, conv, cmd_args, **kwargs):
         """
-        /gif command. Should send the first gif found from an API
-        (probably giphy) that matches the argument words.
+        /help command. Shows the available commands.
         """
-        roboronya.Roboronya._send_response(
+        roboronya._send_message(
             conv, '\n'.join([
-                '**/{}**: {}'.format(cmd_name, help_message)
-                for cmd_name, help_message in COMMAND_HELP.items()
+                '**/{}**: {}'.format(command['name'], command['description'])
+                for command in COMMAND_HELP
             ]),
             **kwargs
         )
@@ -144,17 +176,16 @@ class Commands(object):
     @_requires_args
     @_log_command
     @_failsafe
-    def gif(conv, cmd_args, **kwargs):
+    def gif(roboronya, conv, cmd_args, **kwargs):
         """
         /gif command. Translates commands argument words as
         gifs using giphy.
         """
         giphy_image = giphypop.translate(phrase=' '.join(cmd_args))
         size_in_mb = giphy_image.filesize * 1e-6
-        print('GIF Size In MB => ', size_in_mb)
         if size_in_mb > MAX_GIF_SIZE_IN_MB:
             kwargs['gif_url'] = giphy_image.bitly
-            roboronya.Roboronya._send_response(
+            roboronya._send_message(
                 conv,
                 (
                     'Sorry {user_fullname} gif is too large. '
@@ -163,8 +194,10 @@ class Commands(object):
                 **kwargs
             )
         else:
-            roboronya.Roboronya._send_file(
+            kwargs['file_extension'] = 'gif'
+            roboronya._send_file(
                 conv,
+                'Here\'s your gif {user_fullname}.',
                 giphy_image.media_url,
                 **kwargs
             )
@@ -173,32 +206,28 @@ class Commands(object):
     @_requires_args
     @_log_command
     @_failsafe
-    def fastgif(conv, cmd_args, **kwargs):
+    def fastgif(roboronya, conv, cmd_args, **kwargs):
         """
-        /gif command. Translates commands argument words as
-        gifs using giphy.
+        /fastgif command. Searches for a gif and sends the url.
         """
-        giphy_image = giphypop.translate(phrase=' '.join(cmd_args))
-        
-        
-        kwargs['gif_url'] = giphy_image.media_url
-        roboronya.Roboronya._send_response(
+        kwargs['gif_url'] = _get_gif_url(cmd_args)
+        roboronya._send_message(
             conv,
             (
-                 'Here is your URL to the gif {user_fullname}: {gif_url} ... love you btw'
+                'Here is your URL to the gif {user_fullname}: '
+                '{gif_url} ... love you btw'
             ),
             **kwargs
         )
-       
 
     @staticmethod
     @_log_command
     @_failsafe
-    def love(conv, cmd_args, **kwargs):
+    def love(roboronya, conv, cmd_args, **kwargs):
         """
         /love command. From Robornya with love.
         """
-        roboronya.Roboronya._send_response(
+        roboronya._send_message(
             conv,
             'I love you {user_fullname} <3.',
             **kwargs
@@ -207,12 +236,12 @@ class Commands(object):
     @staticmethod
     @_log_command
     @_failsafe
-    def cointoss(conv, cmd_args, **kwargs):
+    def cointoss(roboronya, conv, cmd_args, **kwargs):
         """
         /cointoss command. Tosses a coin to make a decision as gods should,
         based on luck.
         """
-        roboronya.Roboronya._send_response(
+        roboronya._send_message(
             conv,
             'heads' if random.getrandbits(1) == 0 else 'tails',
             **kwargs
@@ -221,11 +250,11 @@ class Commands(object):
     @staticmethod
     @_log_command
     @_failsafe
-    def ping(conv, cmd_args, **kwargs):
+    def ping(roboronya, conv, cmd_args, **kwargs):
         """
         /ping command. Check bot status.
         """
-        roboronya.Roboronya._send_response(
+        roboronya._send_message(
             conv,
             '**Pong!**',
             **kwargs
@@ -234,7 +263,7 @@ class Commands(object):
     @staticmethod
     @_log_command
     @_failsafe
-    def magicball(conv, cmd_args, **kwargs):
+    def magicball(roboronya, conv, cmd_args, **kwargs):
         """
         /magicball command: Randomly answer like a magic ball.
         """
@@ -261,7 +290,7 @@ class Commands(object):
             'Very doubtful {user_fullname}'
         ]
 
-        roboronya.Roboronya._send_response(
+        roboronya._send_message(
             conv,
             random.choice(answers),
             **kwargs
@@ -276,7 +305,7 @@ class Commands(object):
     @staticmethod
     @_log_command
     @_failsafe
-    def cholify(conv, cmd_args, **kwargs):
+    def cholify(roboronya, conv, cmd_args, **kwargs):
 
         def _cholify(words):
             choloWords = []
@@ -285,25 +314,25 @@ class Commands(object):
                 oldChar = ''
                 for char in word.lower():
                     if char == 'y':
-                        choloWord+= 'ii'
+                        choloWord += 'ii'
                     elif char == 't':
-                        choloWord+= 'th'
+                        choloWord += 'th'
                     elif char == 'u' and (oldChar == 'q'):
-                        choloWord+= random.choice(['kh', 'k'])
-                    elif (char == 'i' or char == 'e') and oldChar== 'c':
+                        choloWord += random.choice(['kh', 'k'])
+                    elif (char == 'i' or char == 'e') and oldChar == 'c':
                         choloWord = choloWord[:-1]
-                        choloWord+=random.choice(['s','z'])+char
-                    elif char == 'h' and oldChar== 'c':
+                        choloWord += random.choice(['s', 'z']) + char
+                    elif char == 'h' and oldChar == 'c':
                         choloWord = choloWord[:-1]
-                        choloWord+=random.choice(['zh', 'sh'])
+                        choloWord += random.choice(['zh', 'sh'])
                     elif char == 'c':
-                        choloWord+='k'
+                        choloWord += 'k'
                     elif char == 's':
-                        choloWord+='z'
+                        choloWord += 'z'
                     elif char == 'v':
-                        choloWord+='b'
+                        choloWord += 'b'
                     elif char == 'b':
-                        choloWord+='v'
+                        choloWord += 'v'
                     elif char == 'q':
                         pass
                     else:
@@ -312,7 +341,7 @@ class Commands(object):
                 choloWords.append(choloWord)
             return choloWords
 
-        roboronya.Roboronya._send_response(
+        roboronya._send_message(
             conv,
             ' '.join(_cholify(cmd_args)),
             **kwargs
@@ -322,20 +351,24 @@ class Commands(object):
     @_requires_args
     @_log_command
     @_failsafe
-    def gfycat(conv, cmd_args, **kwargs):
+    def gfycat(roboronya, conv, cmd_args, **kwargs):
         """
         /gfycat command: Like the /gif command but instead
         of using giphy it uses gfycat.
         """
-        response_json = requests.get(
-            GIFYCAT_SEARCH_URL,
-            params={'search_text': ' '.join(cmd_args)}
-        ).json()
-        gfycats = response_json.get('gfycats', [])
-        if gfycats:
-            gfycat_json = random.choice(gfycats)
-            roboronya.Roboronya._send_file(
+        gif_url = _get_gif_url(cmd_args)
+        if gif_url:
+            kwargs['file_extension'] = 'gif'
+            roboronya._send_file(
                 conv,
-                gfycat_json['max2mbGif'],
+                'Here\'s your gif {user_fullname}.',
+                gif_url,
+                **kwargs
+            )
+        else:
+            roboronya._send_message(
+                conv,
+                'Sorry {user_fullname}, I couldn\'t find'
+                ' a gif for you.',
                 **kwargs
             )
