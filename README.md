@@ -1,4 +1,4 @@
-# roboronya
+# roboronya [![Build Status](https://travis-ci.org/synnick/roboronya.svg?branch=master)](https://travis-ci.org/synnick/roboronya)
 Hangouts bot just for fun.
 
 ## Description
