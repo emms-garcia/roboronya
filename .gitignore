@@ -3,6 +3,8 @@ __pycache__/
 runtime/
 .cache
 *.egg-info/
+build/
+*.eggs/
 
 # Emacs files
 *~
