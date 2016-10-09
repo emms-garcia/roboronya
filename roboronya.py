@@ -8,7 +8,6 @@ import os
 import shutil
 import sys
 import time
-import threading
 import uuid
 
 import asyncio
@@ -55,10 +54,7 @@ class Roboronya(object):
         print('Conversation event received.')
         if isinstance(conv_event, hangups.ChatMessageEvent):
             conv = self._conv_list.get(conv_event.conversation_id)
-            threading.Thread(
-                args=(conv, conv_event),
-                target=self._handle_message,
-            ).start()
+            self._handle_message(conv, conv_event)
 
     def _handle_message(self, conv, conv_event):
         asyncio.set_event_loop(self._loop)
