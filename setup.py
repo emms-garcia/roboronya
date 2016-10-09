@@ -37,7 +37,6 @@ setup(
         'giphypop==0.2',
         'hangups==0.4.1',
         'pytest==3.0.3',
-        'requests==2.6.0',
     ],
     license='MIT',
     name='roboronya',
