@@ -14,12 +14,12 @@ import asyncio
 import hangups
 import requests
 
-from commands import Commands
-from config import (
+from roboronya.commands import Commands
+from roboronya.config import (
     IMAGES_DIR, MAX_COMMANDS_PER_MESSAGE,
     MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH,
 )
-from utils import create_path_if_not_exists
+from roboronya.utils import create_path_if_not_exists
 
 
 class RoboronyaException(Exception):
@@ -200,9 +200,13 @@ class Roboronya(object):
             self._hangups.disconnect()
         ).add_done_callback(lambda future: future.result())
 
-if __name__ == '__main__':
+
+def main():
     roboronya = Roboronya()
     try:
         roboronya.run()
     except KeyboardInterrupt:
         roboronya.stop()
+
+if __name__ == '__main__':
+    main()

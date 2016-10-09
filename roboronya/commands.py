@@ -4,7 +4,7 @@ import random
 import giphypop
 import requests
 
-from config import (
+from roboronya.config import (
     GIFYCAT_SEARCH_URL, MAX_GIF_SIZE_IN_MB,
     URBAN_DICT_URL, URBAN_DICT_RANDOM_URL
 )
@@ -12,6 +12,7 @@ from config import (
 """
     Helpers for the commands.
 """
+
 
 COMMAND_HELP = [
     {
@@ -65,19 +66,30 @@ COMMAND_HELP = [
         )
     },
     {
-        'name':'tictactoe',
-        'description':'Play Tic Tac Toe with Roboronya, beware of her skills. Check */tictactoe help* for more info.'
+        'name': 'tictactoe',
+        'description': (
+            'Play Tic Tac Toe with Roboronya, beware of her skills. '
+            'Check */tictactoe help* for more info.'
+        )
     },
     {
-        'name':'gato',
-        'description':'Tic Tac Toe for those who prefer spanish. *Hola si, taco taco!*'
+        'name': 'gato',
+        'description': (
+            'Tic Tac Toe for those who prefer spanish. *Hola si, taco taco!*'
+        )
     },
     {
-        'name':'whatis',
-        'description':'Wanna learn the meaning of something? Ask Roboronya, she knows. For a specific meaning use /whatis <words>, or use /whatis for a random meaning.'
+        'name': 'whatis',
+        'description': (
+            'Wanna learn the meaning of something? Ask Roboronya, '
+            'she knows. For a specific meaning use /whatis <words>, '
+            'or use /whatis for a random meaning.'
+        )
     }
 ]
-def _failsafe(fn):
+
+
+def failsafe(fn):
     """
     Sends a message in case of command failure.
     """
@@ -105,7 +117,7 @@ def _failsafe(fn):
     return wrapper
 
 
-def _get_gif_url(keywords):
+def get_gif_url(keywords):
     """
     Get an URL to a gif, given some keywords.
     """
@@ -120,7 +132,7 @@ def _get_gif_url(keywords):
     return None
 
 
-def _log_command(fn):
+def log_command(fn):
     """
         Decorator to log running command data.
     """
@@ -135,7 +147,7 @@ def _log_command(fn):
     return wrapper
 
 
-def _requires_args(fn):
+def requires_args(fn):
     """
         Decorator to validate commands that require arguments.
     """
@@ -167,6 +179,7 @@ def _requires_args(fn):
     in other words any following words written after the command.
 """
 
+
 class TicTacToe(object):
 
     board = [' ',' ',' ',' ',' ',' ',' ',' ',' ']
@@ -186,7 +199,7 @@ class TicTacToe(object):
             return True
         else:
             return False
-    
+
     def start():
         if all(x == ' ' for x in TicTacToe.board):
             pos = random.randint(0,8)
@@ -269,11 +282,12 @@ class TicTacToe(object):
     def printBoard():
         return '\n ————\n'.join(['|'.join([' {} '.format(TicTacToe.get(i,j)) for i in range(3)])for j in range(3)])
 
+
 class Commands(object):
 
     @staticmethod
-    @_log_command
-    @_failsafe
+    @log_command
+    @failsafe
     def help(roboronya, conv, cmd_args, **kwargs):
         """
         /help command. Shows the available commands.
@@ -287,9 +301,9 @@ class Commands(object):
         )
 
     @staticmethod
-    @_requires_args
-    @_log_command
-    @_failsafe
+    @requires_args
+    @log_command
+    @failsafe
     def gif(roboronya, conv, cmd_args, **kwargs):
         """
         /gif command. Translates commands argument words as
@@ -332,14 +346,14 @@ class Commands(object):
             )
 
     @staticmethod
-    @_requires_args
-    @_log_command
-    @_failsafe
+    @requires_args
+    @log_command
+    @failsafe
     def fastgif(roboronya, conv, cmd_args, **kwargs):
         """
         /fastgif command. Searches for a gif and sends the url.
         """
-        kwargs['gif_url'] = _get_gif_url(cmd_args)
+        kwargs['gif_url'] = get_gif_url(cmd_args)
         roboronya.send_message(
             conv,
             (
@@ -350,8 +364,8 @@ class Commands(object):
         )
 
     @staticmethod
-    @_log_command
-    @_failsafe
+    @log_command
+    @failsafe
     def love(roboronya, conv, cmd_args, **kwargs):
         """
         /love command. From Robornya with love.
@@ -363,8 +377,8 @@ class Commands(object):
         )
 
     @staticmethod
-    @_log_command
-    @_failsafe
+    @log_command
+    @failsafe
     def cointoss(roboronya, conv, cmd_args, **kwargs):
         """
         /cointoss command. Tosses a coin to make a decision as gods should,
@@ -377,8 +391,8 @@ class Commands(object):
         )
 
     @staticmethod
-    @_log_command
-    @_failsafe
+    @log_command
+    @failsafe
     def ping(roboronya, conv, cmd_args, **kwargs):
         """
         /ping command. Check bot status.
@@ -390,8 +404,8 @@ class Commands(object):
         )
 
     @staticmethod
-    @_log_command
-    @_failsafe
+    @log_command
+    @failsafe
     def magicball(roboronya, conv, cmd_args, **kwargs):
         """
         /magicball command: Randomly answer like a magic ball.
@@ -432,8 +446,8 @@ class Commands(object):
         Commands.magicball(*args, **kwargs)
 
     @staticmethod
-    @_log_command
-    @_failsafe
+    @log_command
+    @failsafe
     def cholify(roboronya, conv, cmd_args, **kwargs):
 
         def _cholify(words):
@@ -477,15 +491,15 @@ class Commands(object):
         )
 
     @staticmethod
-    @_requires_args
-    @_log_command
-    @_failsafe
+    @requires_args
+    @log_command
+    @failsafe
     def gfycat(roboronya, conv, cmd_args, **kwargs):
         """
         /gfycat command: Like the /gif command but instead
         of using giphy it uses gfycat.
         """
-        gif_url = _get_gif_url(cmd_args)
+        gif_url = get_gif_url(cmd_args)
         if gif_url:
             kwargs['file_extension'] = 'gif'
             roboronya.send_file(
@@ -503,8 +517,8 @@ class Commands(object):
             )
 
     @staticmethod
-    @_log_command
-    @_failsafe
+    @log_command
+    @failsafe
     def tictactoe(roboronya, conv, cmd_args, **kwargs):
         # Let's play some tic tac toe with Roboronya.
         if len(cmd_args) == 1:
@@ -582,8 +596,8 @@ class Commands(object):
 
 
     @staticmethod
-    @_log_command
-    @_failsafe
+    @log_command
+    @failsafe
     def whatis(roboronya, conv, cmd_args, **kwargs):
         if len(cmd_args) != 0:
             response_json = requests.get(
