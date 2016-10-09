@@ -13,9 +13,11 @@ Installation is fairly simple for those familiar with Python. A `requirements.tx
 **Please Note: These are not used for any malign purpose for `roboronya`, they are just used to connect to hangouts
 via `hangups`.**
 
-To execute the `roboronya` bot just run:
+To execute the `roboronya` bot just install the package and run it:
 ```
-python3 roboronya.py
+> pip install -r requirements.txt
+> pip install -e .
+> roboronya
 ```
 
 After a correct login, `roboronya` will connect and listen to incoming events, currently only processing `hangups.ChatMessageEvent`. Each chat event message is parsed to look for slash commands, i. e.
@@ -32,4 +34,3 @@ For any given command, the following words (until before the next command) are p
 - Make command API more robust without sacrificing simplicity. Also Web API would be nice so other languages can interact.
 - Better Exception handling and logging.
 - Add a more reliable way for looking up commands in message.
-- Tests (eventually... maybe...).
