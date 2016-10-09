@@ -1,6 +1,7 @@
 refresh_token.txt
 __pycache__/
 runtime/
+.cache
 
 # Emacs files
 *~
