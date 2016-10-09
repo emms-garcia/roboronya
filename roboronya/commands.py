@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 import random
 
+from bs4 import BeautifulSoup
 import giphypop
 import requests
 
-from roboronya.config import (
-    GIFYCAT_SEARCH_URL, MAGICBALL_ANSWERS, MAX_GIF_SIZE_IN_MB,
-    URBAN_DICT_URL, URBAN_DICT_RANDOM_URL
-)
+from roboronya import config
 from roboronya.exceptions import CommandValidationException
 
 """
@@ -48,14 +46,14 @@ COMMAND_HELP = [
         'name': 'gif',
         'description': (
             'Searches for a gif (from Giphy) that matches the words '
-            'following the command. *i. e. /gif cat*'
+            'following the command. i. e. */gif cat*'
         )
     },
     {
         'name': 'gfycat',
         'description': (
             'Searches for a gif (from Gfycat) that matches the words '
-            'following the command. *i. e. /gfycat dog*.'
+            'following the command. i. e. */gfycat dog*.'
         ),
     },
     {
@@ -86,6 +84,47 @@ COMMAND_HELP = [
             'she knows. For a specific meaning use /whatis <words>, '
             'or use /whatis for a random meaning.'
         )
+    },
+    {
+        'name': 'chucknorris',
+        'description': (
+            'Look for a ~~random joke~~ undeniable truth about our '
+            'lord and savior.'
+        )
+    },
+    {
+        'name': 'yesorno',
+        'description': (
+            'Randomly decide "yes" or "no", with a cool image.'
+        )
+    },
+    {
+        'name': 'piratify',
+        'description': (
+            'Translate some text to the good old pirate language.'
+        )
+    },
+    {
+        'name': 'catfacts',
+        'description': (
+            'Get a random fact about your furry friends.'
+        )
+    },
+    {
+        'name': 'xkcd',
+        'description': (
+            'Get a random XKCD comic, or specify a comic number. '
+            'i. e. */xkcd* or */xkcd 10*'
+        )
+    },
+    {
+        'name': 'randomcat',
+        'description': (
+            'Get a random feline picture. You can also specify '
+            'the size of the image [small, med, full] or the '
+            'format of the image [jpg, png, gif]. i. e. '
+            '*/randomcat size type*'
+        )
     }
 ]
 
@@ -95,7 +134,7 @@ def get_gif_url(keywords):
     Get an URL to a gif, given some keywords.
     """
     response_json = requests.get(
-        GIFYCAT_SEARCH_URL,
+        config.GIFYCAT_SEARCH_URL,
         params={'search_text': ' '.join(keywords)}
     ).json()
     gfycats = response_json.get('gfycats', [])
@@ -112,9 +151,8 @@ def requires_args(fn):
     def wrapper(roboronya, conv, cmd_args, **kwargs):
         if not cmd_args:
             raise CommandValidationException(
-                'The command /{} requires arguments to work.'.format(
-                    kwargs['command_name']
-                )
+                'Sorry {user_fullname}, the /{command_name} '
+                'command requires arguments to work.'
             )
         return fn(roboronya, conv, cmd_args, **kwargs)
     return wrapper
@@ -239,13 +277,45 @@ class Commands(object):
         """
         /help command. Shows the available commands.
         """
-        roboronya.send_message(
-            conv, '\n'.join([
-                '**/{}**: {}'.format(command['name'], command['description'])
-                for command in COMMAND_HELP
-            ]),
-            **kwargs
-        )
+        if not cmd_args:
+            return roboronya.send_message(
+                conv,
+                (
+                    'Here are the available commands, to learn '
+                    'more about a single command type /help '
+                    '*command_name*\n'
+                    '{}'.format('\n'.join([
+                        '**/{}**'.format(command['name'])
+                        for command in COMMAND_HELP
+                    ]))
+                ),
+                **kwargs
+            )
+        try:
+            cmd_help = next(
+                filter(
+                    lambda x: x['name'] == cmd_args[0],
+                    COMMAND_HELP
+                )
+            )
+            return roboronya.send_message(
+                conv,
+                '**/{}**: {}'.format(
+                    cmd_help['name'],
+                    cmd_help['description'],
+                ),
+                **kwargs
+            )
+        except StopIteration:
+            return roboronya.send_message(
+                conv,
+                (
+                    'No help found for command: **/{}**.'.format(
+                        cmd_args[0]
+                    )
+                ),
+                **kwargs
+            )
 
     @staticmethod
     @requires_args
@@ -257,7 +327,7 @@ class Commands(object):
         giphy_image = giphypop.translate(phrase=' '.join(cmd_args))
         if giphy_image:
             size_in_mb = giphy_image.filesize * 1e-6
-            if size_in_mb > MAX_GIF_SIZE_IN_MB:
+            if size_in_mb > config.MAX_GIF_SIZE_IN_MB:
                 kwargs['gif_url'] = giphy_image.bitly
                 roboronya.send_message(
                     conv,
@@ -268,7 +338,6 @@ class Commands(object):
                     **kwargs
                 )
             else:
-                kwargs['file_extension'] = 'gif'
                 roboronya.send_file(
                     conv,
                     'Here\'s your gif {user_fullname}.',
@@ -348,7 +417,7 @@ class Commands(object):
 
         roboronya.send_message(
             conv,
-            random.choice(MAGICBALL_ANSWERS),
+            random.choice(config.MAGICBALL_ANSWERS),
             **kwargs
         )
 
@@ -411,7 +480,6 @@ class Commands(object):
         """
         gif_url = get_gif_url(cmd_args)
         if gif_url:
-            kwargs['file_extension'] = 'gif'
             roboronya.send_file(
                 conv,
                 'Here\'s your gif {user_fullname}.',
@@ -507,12 +575,12 @@ class Commands(object):
     def whatis(roboronya, conv, cmd_args, **kwargs):
         if len(cmd_args) != 0:
             response_json = requests.get(
-                URBAN_DICT_URL,
+                config.URBAN_DICT_URL,
                 params={'term': ' '.join(cmd_args)}
                 ).json()
         else:
             response_json = requests.get(
-                URBAN_DICT_RANDOM_URL
+                config.URBAN_DICT_RANDOM_URL
                 ).json()
         termList = response_json.get('list', [])
         bestTerm = termList[0]
@@ -529,3 +597,159 @@ class Commands(object):
             conv,
             text,
             **kwargs)
+
+    @staticmethod
+    def chucknorris(roboronya, conv, cmd_args, **kwargs):
+        random_joke = requests.get(
+            config.CHUCK_API_URL
+        ).json()
+        if random_joke.get('type') == 'success':
+            return roboronya.send_message(
+                conv,
+                random_joke['value']['joke'],
+                **kwargs
+            )
+        print(
+            'Failed to retrieve joke from {}. '
+            'Got response: {}'.format(
+                config.CHUCK_API_URL,
+                random_joke,
+            )
+        )
+        return roboronya.send_message(
+            conv,
+            (
+                'Sorry I could not find a joke '
+                'Please try again later.'
+            ),
+            **kwargs
+        )
+
+    @staticmethod
+    def yesorno(roboronya, conv, cmd_args, **kwargs):
+        response_json = requests.get(
+            config.YES_OR_NO_API
+        ).json()
+        return roboronya.send_file(
+            conv,
+            response_json['answer'],
+            response_json['image'],
+            **kwargs
+        )
+
+    @staticmethod
+    @requires_args
+    def piratify(roboronya, conv, cmd_args, **kwargs):
+        response_json = requests.get(
+            config.PIRATE_API_URL,
+            params={
+                'format': 'json',
+                'text': ' '.join(cmd_args)
+            }
+        ).json()
+        if response_json.get('translation'):
+            return roboronya.send_message(
+                conv,
+                '**{}**'.format(response_json['translation']['pirate']),
+                **kwargs
+            )
+        return roboronya.send_message(
+            conv,
+            'Sorry {user_fullname}, I could not piratify your message.',
+            **kwargs
+        )
+
+    @staticmethod
+    def catfacts(roboronya, conv, cmd_args, **kwargs):
+        response_json = requests.get(
+            config.CATFACTS_API_URL
+        ).json()
+        if (
+            response_json.get('success') == 'true' and
+            response_json.get('facts')
+        ):
+            return roboronya.send_message(
+                conv,
+                (
+                    '**Did you know?** {}'.format(
+                        '\n'.join(response_json['facts'])
+                    )
+                ),
+                **kwargs
+            )
+        return roboronya.send_message(
+            conv,
+            'Sorry {user_fullname}, I could not find any cat facts.',
+            **kwargs
+        )
+
+    @staticmethod
+    def xkcd(roboronya, conv, cmd_args, **kwargs):
+        response_json = requests.get(
+            config.XKCD_LATEST_URL
+        ).json()
+        current_num = response_json['num']
+        kwargs['current_num'] = current_num
+        if cmd_args:
+            try:
+                comic_num = int(cmd_args[0])
+            except ValueError:
+                raise CommandValidationException(
+                    'Sorry {user_fullname}, argument must '
+                    'be a number between 1 and {current_num}.'.format(
+                        **kwargs
+                    )
+                )
+            if comic_num > current_num or comic_num < 0:
+                raise CommandValidationException(
+                    'Sorry {user_fullname}, current comic '
+                    'numbers are between 1 and {current_num}.'.format(
+                        **kwargs
+                    )
+                )
+        else:
+            comic_num = random.randint(1, current_num)
+
+        response_json = requests.get(
+            config.XKCD_DETAIL_URL.format(comic_num=comic_num)
+        ).json()
+        return roboronya.send_file(
+            conv,
+            'Title: {}\nURL: {}'.format(
+                response_json['title'],
+                response_json['img'],
+            ),
+            response_json['img'],
+            **kwargs
+        )
+
+    @staticmethod
+    def randomcat(roboronya, conv, cmd_args, **kwargs):
+        valid_sizes = ['small', 'med', 'full']
+        valid_types = ['jpg', 'png', 'gif']
+
+        cat_img_size = 'small'
+        if cmd_args and cmd_args[0] in valid_sizes:
+            cat_img_size = cmd_args[0]
+
+        cat_img_type = 'png'
+        if len(cmd_args) > 1 and cmd_args[1] in valid_types:
+            cat_img_type = cmd_args[1]
+
+        response = requests.get(
+            config.CAT_API_URL,
+            params={
+                'api_key': config.CAT_API_KEY,
+                'format': 'xml',
+                'results_per_page': '1',
+                'size': cat_img_size,
+                'type': cat_img_type,
+            }
+        )
+        xml = BeautifulSoup(response.content, 'html.parser')
+        return roboronya.send_file(
+            conv,
+            'Here\'s your cat {user_fullname}:',
+            xml.images.image.url.text,
+            **kwargs
+        )

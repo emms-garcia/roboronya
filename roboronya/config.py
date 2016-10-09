@@ -19,6 +19,24 @@ MAX_COMMANDS_PER_MESSAGE = 1
 """
 
 """
+    /catfacts
+"""
+CATFACTS_API_URL = 'https://catfacts-api.appspot.com/api/facts'
+
+
+"""
+    /randomcat
+"""
+CAT_API_KEY = 'MTI1ODYz'
+CAT_API_URL = 'http://thecatapi.com/api/images/get'
+
+
+"""
+    /chuck
+"""
+CHUCK_API_URL = 'http://api.icndb.com/jokes/random'
+
+"""
     /gif
 """
 GIFYCAT_SEARCH_URL = 'https://api.gfycat.com/v1test/gfycats/search'
@@ -52,7 +70,24 @@ MAGICBALL_ANSWERS = [
 ]
 
 """
+    /piratify
+"""
+PIRATE_API_URL = 'http://isithackday.com/arrpi.php'
+
+"""
     /whatis
 """
 URBAN_DICT_URL = 'http://api.urbandictionary.com/v0/define'
 URBAN_DICT_RANDOM_URL = 'http://api.urbandictionary.com/v0/random'
+
+"""
+    /xkcd
+"""
+XKCD_LATEST_URL = 'https://xkcd.com/info.0.json'
+XKCD_DETAIL_URL = 'https://xkcd.com/{comic_num}/info.0.json'
+
+
+"""
+    /yesorno
+"""
+YES_OR_NO_API = 'https://yesno.wtf/api'
