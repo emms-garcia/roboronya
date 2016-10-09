@@ -15,7 +15,7 @@ from roboronya.config import (
     MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH,
 )
 from roboronya.exceptions import CommandValidationException
-from roboronya.utils import create_path_if_not_exists
+from roboronya.utils import create_path_if_not_exists, get_file_extension
 
 
 class Roboronya(object):
@@ -85,21 +85,21 @@ class Roboronya(object):
         for command in possible_commands:
             kwargs['command_name'] = command['name']
             try:
-                command_func = getattr(Commands, command['name'])
-                print(
-                    'Running /{} command with arguments: [{}].'.format(
-                        command['name'],
-                        ', '.join(command['args'][-1])
+                command_func = getattr(Commands, command['name'], None)
+                if command_func:
+                    print(
+                        'Running /{} command with arguments: [{}].'.format(
+                            command['name'],
+                            ', '.join(command['args'][-1])
+                        )
                     )
-                )
-                command_func(*command['args'], **kwargs)
-            except AttributeError as e:
-                print(
-                    'Could not find command "/{}". Error: {}'.format(
-                        command['name'],
-                        e
+                    command_func(*command['args'], **kwargs)
+                else:
+                    print(
+                        'Could not find command "/{}".'.format(
+                            command['name'],
+                        )
                     )
-                )
             except CommandValidationException as e:
                 print(e)
                 self.send_message(
@@ -139,7 +139,7 @@ class Roboronya(object):
                 IMAGES_DIR,
                 str(uuid.uuid4())
             ),
-            kwargs.get('file_extension', 'txt')
+            get_file_extension(media_url)
         )
 
         create_path_if_not_exists(file_path)

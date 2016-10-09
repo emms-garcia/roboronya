@@ -8,6 +8,12 @@ def create_path_if_not_exists(file_path):
         os.makedirs(os.path.dirname(file_path))
 
 
+def get_file_extension(file_name):
+    return os.path.splitext(
+        file_name
+    )[1][1:]
+
+
 def get_auth_stdin_patched(email, password, refresh_token_filename):
     """
     Patch to hangups.auth.get_auth_stdin to avoid

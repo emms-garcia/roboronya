@@ -46,14 +46,14 @@ COMMAND_HELP = [
         'name': 'gif',
         'description': (
             'Searches for a gif (from Giphy) that matches the words '
-            'following the command. *i. e. /gif cat*'
+            'following the command. i. e. */gif cat*'
         )
     },
     {
         'name': 'gfycat',
         'description': (
             'Searches for a gif (from Gfycat) that matches the words '
-            'following the command. *i. e. /gfycat dog*.'
+            'following the command. i. e. */gfycat dog*.'
         ),
     },
     {
@@ -113,7 +113,8 @@ COMMAND_HELP = [
     {
         'name': 'xkcd',
         'description': (
-            'Get a random XKCD comic, or specify a comic #.'
+            'Get a random XKCD comic, or specify a comic number. '
+            'i. e. */xkcd* or */xkcd 10*'
         )
     },
     {
@@ -121,8 +122,8 @@ COMMAND_HELP = [
         'description': (
             'Get a random feline picture. You can also specify '
             'the size of the image [small, med, full] or the '
-            'format of the image [jpg, png, gif]. *i. e. '
-            '/randomcat size type*'
+            'format of the image [jpg, png, gif]. i. e. '
+            '*/randomcat size type*'
         )
     }
 ]
@@ -337,7 +338,6 @@ class Commands(object):
                     **kwargs
                 )
             else:
-                kwargs['file_extension'] = 'gif'
                 roboronya.send_file(
                     conv,
                     'Here\'s your gif {user_fullname}.',
@@ -480,7 +480,6 @@ class Commands(object):
         """
         gif_url = get_gif_url(cmd_args)
         if gif_url:
-            kwargs['file_extension'] = 'gif'
             roboronya.send_file(
                 conv,
                 'Here\'s your gif {user_fullname}.',
@@ -604,7 +603,7 @@ class Commands(object):
         random_joke = requests.get(
             config.CHUCK_API_URL
         ).json()
-        if random_joke['type'] == 'success':
+        if random_joke.get('type') == 'success':
             return roboronya.send_message(
                 conv,
                 random_joke['value']['joke'],
@@ -631,7 +630,6 @@ class Commands(object):
         response_json = requests.get(
             config.YES_OR_NO_API
         ).json()
-        kwargs['file_extension'] = 'gif'
         return roboronya.send_file(
             conv,
             response_json['answer'],
@@ -657,7 +655,7 @@ class Commands(object):
             )
         return roboronya.send_message(
             conv,
-            'Sorry I could not piratify your message.',
+            'Sorry {user_fullname}, I could not piratify your message.',
             **kwargs
         )
 
@@ -681,7 +679,7 @@ class Commands(object):
             )
         return roboronya.send_message(
             conv,
-            'Sorry I could not find any cat facts.',
+            'Sorry {user_fullname}, I could not find any cat facts.',
             **kwargs
         )
 
@@ -691,18 +689,23 @@ class Commands(object):
             config.XKCD_LATEST_URL
         ).json()
         current_num = response_json['num']
+        kwargs['current_num'] = current_num
         if cmd_args:
             try:
                 comic_num = int(cmd_args[0])
             except ValueError:
                 raise CommandValidationException(
                     'Sorry {user_fullname}, argument must '
-                    'be a number between 1 and '+str(current_num)
+                    'be a number between 1 and {current_num}.'.format(
+                        **kwargs
+                    )
                 )
             if comic_num > current_num or comic_num < 0:
                 raise CommandValidationException(
                     'Sorry {user_fullname}, current comic '
-                    'numbers are between 1 and '+str(current_num)
+                    'numbers are between 1 and {current_num}.'.format(
+                        **kwargs
+                    )
                 )
         else:
             comic_num = random.randint(1, current_num)
@@ -710,10 +713,12 @@ class Commands(object):
         response_json = requests.get(
             config.XKCD_DETAIL_URL.format(comic_num=comic_num)
         ).json()
-        kwargs['file_extension'] = 'png'
         return roboronya.send_file(
             conv,
-            'Title: {}'.format(response_json['title']),
+            'Title: {}\nURL: {}'.format(
+                response_json['title'],
+                response_json['img'],
+            ),
             response_json['img'],
             **kwargs
         )
@@ -742,7 +747,6 @@ class Commands(object):
             }
         )
         xml = BeautifulSoup(response.content, 'html.parser')
-        kwargs['file_extension'] = 'png'
         return roboronya.send_file(
             conv,
             'Here\'s your cat {user_fullname}:',
