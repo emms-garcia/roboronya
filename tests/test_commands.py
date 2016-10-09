@@ -63,9 +63,19 @@ def test_get_gif_url(mock_request):
 
 def test_help(mock_roboronya, cmd_kwargs):
     Commands.help(mock_roboronya, None, [], **cmd_kwargs('help'))
+    # Check command is in help list
     for command_help in commands.COMMAND_HELP:
         assert command_help['name'] in mock_roboronya.message
-        assert command_help['description'] in mock_roboronya.message
+
+    # Check command is in help detail
+    for command_help in commands.COMMAND_HELP:
+        Commands.help(
+            mock_roboronya,
+            None,
+            [command_help['name']],
+            **cmd_kwargs('help')
+        )
+        assert command_help['name'] in mock_roboronya.message
 
 
 def test_fastgif(mock_roboronya, cmd_kwargs):

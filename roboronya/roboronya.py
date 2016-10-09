@@ -95,18 +95,16 @@ class Roboronya(object):
                 command_func(*command['args'], **kwargs)
             except AttributeError as e:
                 print(
-                    'Could not find command "/{}".'.format(
+                    'Could not find command "/{}". Error: {}'.format(
                         command['name'],
+                        e
                     )
                 )
             except CommandValidationException as e:
                 print(e)
                 self.send_message(
                     conv,
-                    (
-                        'Sorry {user_fullname}, the /{command_name} '
-                        'command requires arguments to work.'
-                    ),
+                    str(e),
                     **kwargs
                 )
             except Exception as e:
