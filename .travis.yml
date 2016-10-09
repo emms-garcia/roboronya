@@ -6,5 +6,4 @@ install:
   - python setup.py --quiet install
 # command to run tests
 script:
-  - pip uninstall --quiet --yes pytest py
   - python setup.py test
