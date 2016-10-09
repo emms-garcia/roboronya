@@ -14,16 +14,13 @@ import asyncio
 import hangups
 import requests
 
-from commands import Commands
-from config import (
+from roboronya.commands import Commands
+from roboronya.config import (
     IMAGES_DIR, MAX_COMMANDS_PER_MESSAGE,
     MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH,
 )
-from utils import create_path_if_not_exists
-
-
-class RoboronyaException(Exception):
-    pass
+from roboronya.exceptions import CommandValidationException
+from roboronya.utils import create_path_if_not_exists
 
 
 class Roboronya(object):
@@ -94,13 +91,28 @@ class Roboronya(object):
             kwargs['command_name'] = command['name']
             try:
                 command_func = getattr(Commands, command['name'])
+                print(
+                    'Running /{} command with arguments: [{}].'.format(
+                        command['name'],
+                        ', '.join(command['args'][-1])
+                    )
+                )
                 command_func(*command['args'], **kwargs)
             except AttributeError as e:
                 print(
-                    'Could not find command "/{}". Error: {}'.format(
+                    'Could not find command "/{}".'.format(
                         command['name'],
-                        e
                     )
+                )
+            except CommandValidationException as e:
+                print(e)
+                self.send_message(
+                    conv,
+                    (
+                        'Sorry {user_fullname}, the /{command_name} '
+                        'command requires arguments to work.'
+                    ),
+                    **kwargs
                 )
             except Exception as e:
                 print(
@@ -110,8 +122,8 @@ class Roboronya(object):
                 self.send_message(
                     conv,
                     (
-                        'Sorry {user_fullname} something went wrong '
-                        'with your /{command_name}.'
+                        'Sorry {user_fullname} I failed to process '
+                        'your command: "{original_message}".'
                     ),
                     **kwargs
                 )
@@ -200,9 +212,13 @@ class Roboronya(object):
             self._hangups.disconnect()
         ).add_done_callback(lambda future: future.result())
 
-if __name__ == '__main__':
+
+def main():
     roboronya = Roboronya()
     try:
         roboronya.run()
     except KeyboardInterrupt:
         roboronya.stop()
+
+if __name__ == '__main__':
+    main()
