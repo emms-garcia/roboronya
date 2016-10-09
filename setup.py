@@ -24,7 +24,7 @@ with open('README.md') as f:
     README = f.read()
 
 with open('requirements.txt') as f:
-    REQUIREMENTS = map(str.strip, f.readlines())
+    REQUIREMENTS = list(map(str.strip, f.readlines()))
 
 setup(
     author='Emmanuel García',
