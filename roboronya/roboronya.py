@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Emmanuel García'
-__title__ = 'roboronya'
-__license__ = 'MIT'
-__version__ = '0.1'
-
 import os
 import shutil
 import sys
@@ -208,17 +203,7 @@ class Roboronya(object):
         print('Roboronya was stopped.')
         if os.path.exists(IMAGES_DIR):
             shutil.rmtree(IMAGES_DIR)
-        asyncio.async(
-            self._hangups.disconnect()
-        ).add_done_callback(lambda future: future.result())
-
-
-def main():
-    roboronya = Roboronya()
-    try:
-        roboronya.run()
-    except KeyboardInterrupt:
-        roboronya.stop()
-
-if __name__ == '__main__':
-    main()
+        if getattr(self, '_hangups'):
+            asyncio.async(
+                self._hangups.disconnect()
+            ).add_done_callback(lambda future: future.result())
