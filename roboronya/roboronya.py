@@ -91,12 +91,17 @@ class Roboronya(object):
             kwargs['command_name'] = command['name']
             try:
                 command_func = getattr(Commands, command['name'])
+                print(
+                    'Running /{} command with arguments: [{}].'.format(
+                        command['name'],
+                        ', '.join(command['args'][-1])
+                    )
+                )
                 command_func(*command['args'], **kwargs)
             except AttributeError as e:
                 print(
-                    'Could not find command "/{}". Error: {}'.format(
+                    'Could not find command "/{}".'.format(
                         command['name'],
-                        e
                     )
                 )
             except CommandValidationException as e:

@@ -5,7 +5,7 @@ import giphypop
 import requests
 
 from roboronya.config import (
-    GIFYCAT_SEARCH_URL, MAX_GIF_SIZE_IN_MB,
+    GIFYCAT_SEARCH_URL, MAGICBALL_ANSWERS, MAX_GIF_SIZE_IN_MB,
     URBAN_DICT_URL, URBAN_DICT_RANDOM_URL
 )
 from roboronya.exceptions import CommandValidationException
@@ -103,21 +103,6 @@ def get_gif_url(keywords):
         gfycat_json = random.choice(gfycats)
         return gfycat_json['max2mbGif']
     return None
-
-
-def log_command(fn):
-    """
-        Decorator to log running command data.
-    """
-    def wrapper(roboronya, conv, cmd_args, **kwargs):
-        print(
-            'Running /{} command with arguments: [{}].'.format(
-                kwargs['command_name'],
-                ', '.join(cmd_args)
-            )
-        )
-        return fn(roboronya, conv, cmd_args, **kwargs)
-    return wrapper
 
 
 def requires_args(fn):
@@ -250,7 +235,6 @@ class TicTacToe(object):
 class Commands(object):
 
     @staticmethod
-    @log_command
     def help(roboronya, conv, cmd_args, **kwargs):
         """
         /help command. Shows the available commands.
@@ -265,7 +249,6 @@ class Commands(object):
 
     @staticmethod
     @requires_args
-    @log_command
     def gif(roboronya, conv, cmd_args, **kwargs):
         """
         /gif command. Translates commands argument words as
@@ -309,7 +292,6 @@ class Commands(object):
 
     @staticmethod
     @requires_args
-    @log_command
     def fastgif(roboronya, conv, cmd_args, **kwargs):
         """
         /fastgif command. Searches for a gif and sends the url.
@@ -325,7 +307,6 @@ class Commands(object):
         )
 
     @staticmethod
-    @log_command
     def love(roboronya, conv, cmd_args, **kwargs):
         """
         /love command. From Robornya with love.
@@ -337,7 +318,6 @@ class Commands(object):
         )
 
     @staticmethod
-    @log_command
     def cointoss(roboronya, conv, cmd_args, **kwargs):
         """
         /cointoss command. Tosses a coin to make a decision as gods should,
@@ -350,7 +330,6 @@ class Commands(object):
         )
 
     @staticmethod
-    @log_command
     def ping(roboronya, conv, cmd_args, **kwargs):
         """
         /ping command. Check bot status.
@@ -362,37 +341,14 @@ class Commands(object):
         )
 
     @staticmethod
-    @log_command
     def magicball(roboronya, conv, cmd_args, **kwargs):
         """
         /magicball command: Randomly answer like a magic ball.
         """
-        answers = [
-            'It is certain {user_fullname}',
-            'It is decidedly so {user_fullname}',
-            'Without a doubt {user_fullname}',
-            'Yes {user_fullname}, definitely',
-            'You may rely on it {user_fullname}',
-            'As I see it, yes {user_fullname}',
-            'Most likely {user_fullname}',
-            'Outlook good {user_fullname}',
-            'Yes {user_fullname}',
-            'Signs point to yes {user_fullname}',
-            'Reply hazy, try again {user_fullname}',
-            'Ask again later {user_fullname}',
-            'Better not tell you now {user_fullname}',
-            'Cannot predict now {user_fullname}',
-            'Concentrate and ask again {user_fullname}',
-            'Don\'t count on it {user_fullname}',
-            'My reply is no {user_fullname}',
-            'My sources say no {user_fullname}',
-            'Outlook not so good {user_fullname}',
-            'Very doubtful {user_fullname}'
-        ]
 
         roboronya.send_message(
             conv,
-            random.choice(answers),
+            random.choice(MAGICBALL_ANSWERS),
             **kwargs
         )
 
@@ -403,7 +359,7 @@ class Commands(object):
         Commands.magicball(*args, **kwargs)
 
     @staticmethod
-    @log_command
+    @requires_args
     def cholify(roboronya, conv, cmd_args, **kwargs):
 
         def _cholify(words):
@@ -448,7 +404,6 @@ class Commands(object):
 
     @staticmethod
     @requires_args
-    @log_command
     def gfycat(roboronya, conv, cmd_args, **kwargs):
         """
         /gfycat command: Like the /gif command but instead
@@ -472,7 +427,7 @@ class Commands(object):
             )
 
     @staticmethod
-    @log_command
+    @requires_args
     def tictactoe(roboronya, conv, cmd_args, **kwargs):
         # Let's play some tic tac toe with Roboronya.
         if len(cmd_args) == 1:
@@ -490,7 +445,7 @@ class Commands(object):
                     "**Peasants:** {}\n".format(TicTacToe.peasantsWins)+
                     "**Draws:** {}".format(TicTacToe.draws),
                     **kwargs)
-            elif cmd_args[0] == 'start': # Let roboronya start the game 
+            elif cmd_args[0] == 'start': # Let roboronya start the game
                 if TicTacToe.start():# Roboronya starts the game
                     roboronya.send_message(
                         conv,
@@ -548,9 +503,7 @@ class Commands(object):
     def gato(*args, **kwargs):
         Commands.tictactoe(*args, **kwargs)
 
-
     @staticmethod
-    @log_command
     def whatis(roboronya, conv, cmd_args, **kwargs):
         if len(cmd_args) != 0:
             response_json = requests.get(
@@ -570,7 +523,7 @@ class Commands(object):
         text = '**{}**: "{}"\n-{}'.format(word, definition, author)
 
         if example != '':
-            text+='\n\nExample:\n*{}*'.format(example)
+            text += '\n\nExample:\n*{}*'.format(example)
 
         roboronya.send_message(
             conv,

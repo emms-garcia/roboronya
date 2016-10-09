@@ -4,6 +4,7 @@ from unittest import mock
 
 from roboronya import commands
 from roboronya.commands import Commands
+from roboronya import config
 from roboronya.exceptions import CommandValidationException
 
 """
@@ -77,3 +78,21 @@ def test_fastgif(mock_roboronya, cmd_kwargs):
         Commands.fastgif(
             mock_roboronya, None, ['foo'], **cmd_kwargs('fastgif'))
         assert fake_gif_url in mock_roboronya.message
+
+
+def test_love(mock_roboronya, cmd_kwargs):
+    Commands.love(mock_roboronya, None, [], **cmd_kwargs('love'))
+    assert 'I love you Foo Bar <3' in mock_roboronya.message
+
+
+def test_cointoss(mock_roboronya, cmd_kwargs):
+    Commands.cointoss(mock_roboronya, None, [], **cmd_kwargs('cointoss'))
+    assert mock_roboronya.message in ['heads', 'tails']
+
+
+def test_magicball(mock_roboronya, cmd_kwargs):
+    Commands.magicball(mock_roboronya, None, [], **cmd_kwargs('magicball'))
+    assert any([
+        answer.format(user_fullname='Foo Bar') == mock_roboronya.message
+        for answer in config.MAGICBALL_ANSWERS
+    ])
