@@ -15,9 +15,12 @@ import asyncio
 import hangups
 import requests
 
-import commands
-from config import IMAGES_DIR, MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH
-from utils import create_path_if_not_exists, get_auth_stdin_patched
+from commands import Commands
+from config import (
+    IMAGES_DIR, MAX_COMMANDS_PER_MESSAGE,
+    MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH,
+)
+from utils import create_path_if_not_exists
 
 
 class RoboronyaException(Exception):
@@ -32,20 +35,23 @@ class Roboronya(object):
     But it probably will...
     """
 
-    async def _on_hangups_connect(self):
+    @asyncio.coroutine
+    def _on_hangups_connect(self):
         print('Connected.')
         self._user_list, self._conv_list = (
-            await hangups.conversation.
+            yield from hangups.conversation.
             build_user_conversation_list(self._hangups)
         )
         self._conv_list.on_event.add_observer(
             self._on_hangups_event
         )
 
-    async def _on_disconnect(self):
+    @asyncio.coroutine
+    def _on_disconnect(self):
         print('Disconnected.')
 
-    async def _on_hangups_event(self, conv_event):
+    @asyncio.coroutine
+    def _on_hangups_event(self, conv_event):
         print('Conversation event received.')
         if isinstance(conv_event, hangups.ChatMessageEvent):
             conv = self._conv_list.get(conv_event.conversation_id)
@@ -56,9 +62,8 @@ class Roboronya(object):
 
     def _handle_message(self, conv, conv_event):
         asyncio.set_event_loop(self._loop)
-
         user = conv.get_user(conv_event.user_id)
-        if self._email in user.emails:
+        if user.is_self:
             return
 
         message = conv_event.text
@@ -66,7 +71,7 @@ class Roboronya(object):
         for token in message.split():
             if '/' in token:
                 possible_commands.append({
-                    'args': [conv, []],
+                    'args': [self, conv, []],
                     'name': token.replace('/', '')
                 })
             else:
@@ -77,10 +82,22 @@ class Roboronya(object):
             'original_message': message,
             'user_fullname': user.full_name,
         }
+
+        if len(possible_commands) > MAX_COMMANDS_PER_MESSAGE:
+            kwargs['num_cmds'] = MAX_COMMANDS_PER_MESSAGE
+            return self.send_message(
+                conv,
+                (
+                    'Sorry {user_fullname} I can only process '
+                    '{num_cmds} command(s) per message.'
+                ),
+                **kwargs
+            )
+
         for command in possible_commands:
             kwargs['command_name'] = command['name']
             try:
-                command_func = getattr(commands.Commands, command['name'])
+                command_func = getattr(Commands, command['name'])
                 command_func(*command['args'], **kwargs)
             except AttributeError as e:
                 print(
@@ -94,7 +111,7 @@ class Roboronya(object):
                     'Something went horribly wrong with the /{} command. '
                     'Error: {}'.format(command['name'], e)
                 )
-                Roboronya._send_response(
+                self.send_message(
                     conv,
                     (
                         'Sorry {user_fullname} something went wrong '
@@ -103,8 +120,7 @@ class Roboronya(object):
                     **kwargs
                 )
 
-    @staticmethod
-    def _send_response(conv, text, **kwargs):
+    def send_message(self, conv, text, **kwargs):
         asyncio.async(conv.send_message(
             hangups.ChatMessageSegment.from_str(
                 text.format(**kwargs)
@@ -112,8 +128,7 @@ class Roboronya(object):
             image_file=kwargs.get('image_file')
         ))
 
-    @staticmethod
-    def _send_file(conv, media_url, **kwargs):
+    def send_file(self, conv, text, media_url, **kwargs):
         """
         Send a file to the conversation.
         """
@@ -123,35 +138,23 @@ class Roboronya(object):
                 IMAGES_DIR,
                 str(uuid.uuid4())
             ),
-            '.gif'
+            kwargs.get('file_extension', 'txt')
         )
 
         create_path_if_not_exists(file_path)
         with open(file_path, 'wb+') as img:
             img.write(response.content)
 
-        Roboronya._send_response(
+        self.send_message(
             conv,
-            'Here\'s your gif {user_fullname}.',
+            text,
             image_file=open(file_path, 'rb+'),
             **kwargs
         )
 
     def login(self):
-        try:
-            self._email = os.environ['ROBORONYA_EMAIL']
-            password = os.environ['ROBORONYA_PASSWORD']
-        except KeyError as e:
-            raise RoboronyaException(
-                'Failed to retrieve credentials from env. '
-                'You must set the ROBORONYA_EMAIL and '
-                'ROBORONYA_PASSWORD env variables. '
-                'Error: {} not found.'.format(e)
-            ) from None
-
-        return get_auth_stdin_patched(
-            self._email,
-            password,
+        create_path_if_not_exists(REFRESH_TOKEN_PATH)
+        return hangups.auth.get_auth_stdin(
             REFRESH_TOKEN_PATH
         )
 
