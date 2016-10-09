@@ -4,7 +4,10 @@ import random
 import giphypop
 import requests
 
-from config import GIFYCAT_SEARCH_URL, MAX_GIF_SIZE_IN_MB, URBAN_DICT_URL, URBAN_DICT_RANDOM_URL
+from config import (
+    GIFYCAT_SEARCH_URL, MAX_GIF_SIZE_IN_MB,
+    URBAN_DICT_URL, URBAN_DICT_RANDOM_URL
+)
 
 """
     Helpers for the commands.
