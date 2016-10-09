@@ -21,5 +21,7 @@ MAX_COMMANDS_PER_MESSAGE = 1
 """
     /gif
 """
+URBAN_DICT_URL = 'http://api.urbandictionary.com/v0/define'
+URBAN_DICT_RANDOM_URL = 'http://api.urbandictionary.com/v0/random'
 GIFYCAT_SEARCH_URL = 'https://api.gfycat.com/v1test/gfycats/search'
 MAX_GIF_SIZE_IN_MB = int(os.environ.get('ROBORONYA_MAX_GIF_SIZE', '5'))
