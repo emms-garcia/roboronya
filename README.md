@@ -13,7 +13,7 @@ Installation is fairly simple for those familiar with Python. A `requirements.tx
 **Please Note: These are not used for any malign purpose for `roboronya`, they are just used to connect to hangouts
 via `hangups`.**
 
-To execute the `roboronya` bot just install the package and run it:
+To execute the `roboronya` bot just install the requirements, install the package and run it:
 ```
 > pip install -r requirements.txt
 > pip install -e .
@@ -27,7 +27,7 @@ After a correct login, `roboronya` will connect and listen to incoming events, c
 
 For any given command, the following words (until before the next command) are parsed and provided to the command "interfaces" (which are plain Python functions for which a `/{command_name}` is redirected.
 
-[To create a new command a simple function is required!](https://github.com/synnick/roboronya/blob/master/commands.py#L253).
+[To create a new command a simple function is required!](https://github.com/synnick/roboronya/blob/master/roboronya/commands.py#L333).
 
 ## TODO
 - More fun commands.

@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import pytest
-
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 import sys
@@ -18,8 +16,15 @@ class PytestCommand(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
+        import pytest
         errno = pytest.main(self.test_args)
         sys.exit(errno)
+
+with open('README.md') as f:
+    README = f.read()
+
+with open('requirements.txt') as f:
+    REQUIREMENTS = map(str.strip, f.readlines())
 
 setup(
     author='Emmanuel García',
@@ -30,16 +35,12 @@ setup(
     description='Hangouts bot just for fun.',
     entry_points={
         'console_scripts': [
-            'roboronya = roboronya.roboronya:main',
+            'roboronya = roboronya.__main__:main',
         ],
     },
-    install_requires=[
-        'giphypop==0.2',
-        'hangups==0.4.1',
-        'pytest==3.0.3',
-        'requests==2.6.0',
-    ],
+    install_requires=REQUIREMENTS,
     license='MIT',
+    long_description=README,
     name='roboronya',
     packages=['roboronya'],
     scripts=[],
