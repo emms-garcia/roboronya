@@ -8,6 +8,7 @@ from roboronya.config import (
     GIFYCAT_SEARCH_URL, MAX_GIF_SIZE_IN_MB,
     URBAN_DICT_URL, URBAN_DICT_RANDOM_URL
 )
+from roboronya.exceptions import CommandValidationException
 
 """
     Helpers for the commands.
@@ -89,34 +90,6 @@ COMMAND_HELP = [
 ]
 
 
-def failsafe(fn):
-    """
-    Sends a message in case of command failure.
-    """
-    error_message = (
-        'Sorry {user_fullname} I failed to process '
-        'your command: "{original_message}".'
-    )
-
-    def wrapper(roboronya, conv, cmd_args, **kwargs):
-        try:
-            return fn(roboronya, conv, cmd_args, **kwargs)
-        except Exception as e:
-            print(
-                'Failed to execute command: {}. '
-                'Error: {}.'.format(
-                    kwargs['command_name'],
-                    e
-                )
-            )
-            roboronya.send_message(
-                conv,
-                error_message,
-                **kwargs
-            )
-    return wrapper
-
-
 def get_gif_url(keywords):
     """
     Get an URL to a gif, given some keywords.
@@ -153,20 +126,11 @@ def requires_args(fn):
     """
     def wrapper(roboronya, conv, cmd_args, **kwargs):
         if not cmd_args:
-            print(
+            raise CommandValidationException(
                 'The command /{} requires arguments to work.'.format(
                     kwargs['command_name']
                 )
             )
-            roboronya.send_message(
-                conv,
-                (
-                    'Sorry {user_fullname}, the /{command_name} '
-                    'command requires arguments to work.'
-                ),
-                **kwargs
-            )
-            return
         return fn(roboronya, conv, cmd_args, **kwargs)
     return wrapper
 
@@ -225,18 +189,18 @@ class TicTacToe(object):
             if len(set(TicTacToe.board[i*3:i*3+3])) is  1 and TicTacToe.board[i*3] is not ' ':
                 winner = TicTacToe.board[i*3]
                 return True, winner
-        
+
         ### check if any of the Columns has winning combination
         for i in range(3):
             if (TicTacToe.board[i] is TicTacToe.board[i+3]) and (TicTacToe.board[i] is  TicTacToe.board[i+6]) and TicTacToe.board[i] is not ' ':
                 winner = TicTacToe.board[i]
                 return True, winner
-        
+
         ### 2,4,6 and 0,4,8 cases
         if TicTacToe.board[0] is TicTacToe.board[4] and TicTacToe.board[4] is TicTacToe.board[8] and TicTacToe.board[4] is not ' ':
             winner = TicTacToe.board[4]
             return  True, winner
-        
+
         if TicTacToe.board[2] is TicTacToe.board[4] and TicTacToe.board[4] is TicTacToe.board[6] and TicTacToe.board[4] is not ' ':
             winner = TicTacToe.board[4]
             return  True, winner
@@ -278,7 +242,7 @@ class TicTacToe(object):
 
     def reset():
         TicTacToe.board = [' ',' ',' ',' ',' ',' ',' ',' ',' ']
-    
+
     def printBoard():
         return '\n ————\n'.join(['|'.join([' {} '.format(TicTacToe.get(i,j)) for i in range(3)])for j in range(3)])
 
@@ -287,7 +251,6 @@ class Commands(object):
 
     @staticmethod
     @log_command
-    @failsafe
     def help(roboronya, conv, cmd_args, **kwargs):
         """
         /help command. Shows the available commands.
@@ -303,7 +266,6 @@ class Commands(object):
     @staticmethod
     @requires_args
     @log_command
-    @failsafe
     def gif(roboronya, conv, cmd_args, **kwargs):
         """
         /gif command. Translates commands argument words as
@@ -348,7 +310,6 @@ class Commands(object):
     @staticmethod
     @requires_args
     @log_command
-    @failsafe
     def fastgif(roboronya, conv, cmd_args, **kwargs):
         """
         /fastgif command. Searches for a gif and sends the url.
@@ -365,7 +326,6 @@ class Commands(object):
 
     @staticmethod
     @log_command
-    @failsafe
     def love(roboronya, conv, cmd_args, **kwargs):
         """
         /love command. From Robornya with love.
@@ -378,7 +338,6 @@ class Commands(object):
 
     @staticmethod
     @log_command
-    @failsafe
     def cointoss(roboronya, conv, cmd_args, **kwargs):
         """
         /cointoss command. Tosses a coin to make a decision as gods should,
@@ -392,7 +351,6 @@ class Commands(object):
 
     @staticmethod
     @log_command
-    @failsafe
     def ping(roboronya, conv, cmd_args, **kwargs):
         """
         /ping command. Check bot status.
@@ -405,7 +363,6 @@ class Commands(object):
 
     @staticmethod
     @log_command
-    @failsafe
     def magicball(roboronya, conv, cmd_args, **kwargs):
         """
         /magicball command: Randomly answer like a magic ball.
@@ -447,7 +404,6 @@ class Commands(object):
 
     @staticmethod
     @log_command
-    @failsafe
     def cholify(roboronya, conv, cmd_args, **kwargs):
 
         def _cholify(words):
@@ -493,7 +449,6 @@ class Commands(object):
     @staticmethod
     @requires_args
     @log_command
-    @failsafe
     def gfycat(roboronya, conv, cmd_args, **kwargs):
         """
         /gfycat command: Like the /gif command but instead
@@ -518,7 +473,6 @@ class Commands(object):
 
     @staticmethod
     @log_command
-    @failsafe
     def tictactoe(roboronya, conv, cmd_args, **kwargs):
         # Let's play some tic tac toe with Roboronya.
         if len(cmd_args) == 1:
@@ -597,7 +551,6 @@ class Commands(object):
 
     @staticmethod
     @log_command
-    @failsafe
     def whatis(roboronya, conv, cmd_args, **kwargs):
         if len(cmd_args) != 0:
             response_json = requests.get(

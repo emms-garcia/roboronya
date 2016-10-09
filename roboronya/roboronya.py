@@ -19,11 +19,8 @@ from roboronya.config import (
     IMAGES_DIR, MAX_COMMANDS_PER_MESSAGE,
     MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH,
 )
+from roboronya.exceptions import CommandValidationException
 from roboronya.utils import create_path_if_not_exists
-
-
-class RoboronyaException(Exception):
-    pass
 
 
 class Roboronya(object):
@@ -102,6 +99,16 @@ class Roboronya(object):
                         e
                     )
                 )
+            except CommandValidationException as e:
+                print(e)
+                self.send_message(
+                    conv,
+                    (
+                        'Sorry {user_fullname}, the /{command_name} '
+                        'command requires arguments to work.'
+                    ),
+                    **kwargs
+                )
             except Exception as e:
                 print(
                     'Something went horribly wrong with the /{} command. '
@@ -110,8 +117,8 @@ class Roboronya(object):
                 self.send_message(
                     conv,
                     (
-                        'Sorry {user_fullname} something went wrong '
-                        'with your /{command_name}.'
+                        'Sorry {user_fullname} I failed to process '
+                        'your command: "{original_message}".'
                     ),
                     **kwargs
                 )
