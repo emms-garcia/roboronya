@@ -15,8 +15,8 @@ from roboronya.config import (
 )
 from roboronya.exceptions import CommandValidationException
 from roboronya.utils import (
-    create_path_if_not_exists, get_file_extension,
-    get_logger, get_uuid
+    create_path_if_not_exists, dict_update,
+    get_file_extension, get_logger, get_uuid
 )
 
 logger = get_logger(__name__)
@@ -30,6 +30,9 @@ class Roboronya(object):
     But it probably will...
     """
     def __init__(self):
+        self._state = {
+            'users': {}
+        }
         self._users = {}
 
     @asyncio.coroutine
@@ -50,17 +53,25 @@ class Roboronya(object):
         if isinstance(conv_event, hangups.ChatMessageEvent):
             conv = self._conv_list.get(conv_event.conversation_id)
             # Store user reference under generated unique ID.
-            if not conv_event.user_id in self._users:
-                self._users[conv_event.user_id] = get_uuid()
+            for user in conv.users:
+                if not user.id_ in self._users:
+                    self._store_user_state(user)
             self._handle_message(conv, conv_event)
+
+    def _store_user_state(self, user):
+        user_uid = get_uuid()
+        self._users[user.id_] = user_uid
+        self._state['users'][user_uid] = {
+            'user_fullname': user.full_name
+        }
 
     def _process_commands(self, conv, conv_event):
         commands = []
-        for token in conv_event.text.lower().split():
+        for token in conv_event.text.split():
             if '/' in token:
                 commands.append({
                     'args': [self, conv, []],
-                    'name': token.replace('/', ''),
+                    'name': token.replace('/', '').lower(),
                     'uid': get_uuid()
                 })
             else:
@@ -82,7 +93,11 @@ class Roboronya(object):
         kwargs = {
             'log_tag': user_uid,
             'original_message': conv_event.text,
-            'user_fullname': user.full_name,
+            'user_fullname': (
+                self.get_state('users')[user_uid].get('alias') or
+                user.full_name
+            ),
+            'user_uid': user_uid,
         }
         logger.info(
             '[{}] Conversation event received.'.format(user_uid)
@@ -182,6 +197,15 @@ class Roboronya(object):
 
         self.send_message(
             conv, text, image_file=open(file_path, 'rb+'), **kwargs
+        )
+
+    def get_state(self, name):
+        return self._state[name]
+
+    def set_state(self, name, new_state):
+        self._state[name] = dict_update(
+            self._state[name],
+            new_state
         )
 
     def login(self):

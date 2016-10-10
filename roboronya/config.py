@@ -21,6 +21,12 @@ MAX_COMMANDS_PER_MESSAGE = 2
 """
 
 """
+    /alias
+"""
+MAX_ALIAS_LENGTH = 30
+
+
+"""
     /catfacts
 """
 CATFACTS_API_URL = 'https://catfacts-api.appspot.com/api/facts'

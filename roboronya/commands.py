@@ -121,6 +121,26 @@ COMMAND_HELP = [
             'format of the image [jpg, png, gif]. i. e. '
             '*/randomcat size type*'
         )
+    },
+    {
+        'name': 'people',
+        'description': (
+            'Display metadata about the users on the current chat.'
+        ),
+    },
+    {
+        'name': 'alias',
+        'description': (
+            'Change how Roboronya calls a certain user during the current '
+            'session i. e. */alias user_id alias ...*\nNote: To check the '
+            'user_id of a certain user use the /people command.'
+        )
+    },
+    {
+        'name': 'callme',
+        'description': (
+            'Change how Roboronya calls you. i. e. */callme Bond, James Bond*'
+        )
     }
 ]
 
@@ -139,6 +159,13 @@ def get_gif_url(keywords):
         return gfycat_json['max2mbGif']
     return None
 
+
+def is_invalid_alias(alias):
+    if len(alias) > config.MAX_ALIAS_LENGTH:
+        return 'Sorry {user_fullname}, that alias is too long.'
+    if len(alias) < 3:
+        return 'Sorry {user_fullname}, that alias is too short.'
+    return None
 
 def requires_args(fn):
     """
@@ -698,4 +725,96 @@ class Commands(object):
         message = 'Here\'s your cat {user_fullname}:'
         return roboronya.send_file(
             conv, message, xml.images.image.url.text, **kwargs
+        )
+
+    @staticmethod
+    @requires_args
+    def callme(roboronya, conv, cmd_args, **kwargs):
+        kwargs['alias'] = ' '.join(cmd_args)
+        invalid_alias_message = is_invalid_alias(kwargs['alias'])
+        if invalid_alias_message:
+            return roboronya.send_message(
+                conv,
+                invalid_alias_message,
+                **kwargs
+            )
+        roboronya.set_state(
+            'users',
+            {
+                kwargs['user_uid']: {
+                    'alias': kwargs['alias']
+                }
+            }
+        )
+        return roboronya.send_message(
+            conv,
+            (
+                'Got it {user_fullname}. For this session your '
+                'alias is {alias}.'
+            ),
+            **kwargs
+        )
+
+    @staticmethod
+    def people(roboronya, conv, cmd_args, **kwargs):
+        return roboronya.send_message(
+            conv,
+            (
+                '\n'.join([
+                    '[**{}**] {} (*{}*)'.format(
+                        user_uid,
+                        user['user_fullname'],
+                        user.get('alias', 'No Alias')
+                    )
+                    for user_uid, user in roboronya.get_state('users').items()
+                ])
+            ),
+            **kwargs
+        )
+
+    @staticmethod
+    @requires_args
+    def alias(roboronya, conv, cmd_args, **kwargs):
+        if len(cmd_args) < 2:
+            return roboronya.send_message(
+                conv,
+                'Sorry {user_fullname}, /alias requires at least '
+                '2 arguments: */alias user_id alias* ',
+                **kwargs
+            )
+        if not roboronya.get_state('users').get(cmd_args[0]):
+            kwargs['alias_user_id'] = cmd_args[0]
+            return roboronya.send_message(
+                conv,
+                'Sorry {user_fullname}, there is no user with '
+                'ID {alias_user_id}.',
+                **kwargs
+            )
+
+        kwargs['alias'] = ' '.join(cmd_args[1:])
+        invalid_alias_message = is_invalid_alias(kwargs['alias'])
+        if invalid_alias_message:
+            return roboronya.send_message(
+                conv,
+                invalid_alias_message,
+                **kwargs
+            )
+        roboronya.set_state(
+            'users',
+            {
+                kwargs['user_uid']: {
+                    'alias': kwargs['alias']
+                }
+            }
+        )
+        kwargs['alias_user_fullname'] = roboronya.get_state(
+            'users'
+        )[cmd_args[0]]['user_fullname']
+        return roboronya.send_message(
+            conv,
+            (
+                'Got it {user_fullname}. For this session '
+                '{alias_user_fullname} alias is {alias}.'
+            ),
+            **kwargs
         )

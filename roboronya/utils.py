@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import collections
 import logging
 import os
 import uuid
@@ -61,3 +62,13 @@ def get_logger(name):
 
 def get_uuid():
     return str(uuid.uuid4()).replace('-', '')[:8].upper()
+
+
+def dict_update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            r = dict_update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
