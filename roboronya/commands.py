@@ -2,11 +2,14 @@
 import random
 
 from bs4 import BeautifulSoup
-import giphypop
 import requests
 
 from roboronya import config
 from roboronya.exceptions import CommandValidationException
+from roboronya.utils import get_logger
+
+
+logger = get_logger(__name__)
 
 """
     Helpers for the commands.
@@ -45,15 +48,8 @@ COMMAND_HELP = [
     {
         'name': 'gif',
         'description': (
-            'Searches for a gif (from Giphy) that matches the words '
-            'following the command. i. e. */gif cat*'
-        )
-    },
-    {
-        'name': 'gfycat',
-        'description': (
             'Searches for a gif (from Gfycat) that matches the words '
-            'following the command. i. e. */gfycat dog*.'
+            'following the command. i. e. */gif dog*.'
         ),
     },
     {
@@ -301,8 +297,7 @@ class Commands(object):
             return roboronya.send_message(
                 conv,
                 '**/{}**: {}'.format(
-                    cmd_help['name'],
-                    cmd_help['description'],
+                    cmd_help['name'], cmd_help['description'],
                 ),
                 **kwargs
             )
@@ -319,53 +314,16 @@ class Commands(object):
 
     @staticmethod
     @requires_args
-    def gif(roboronya, conv, cmd_args, **kwargs):
-        """
-        /gif command. Translates commands argument words as
-        gifs using giphy.
-        """
-        giphy_image = giphypop.translate(phrase=' '.join(cmd_args))
-        if giphy_image:
-            size_in_mb = giphy_image.filesize * 1e-6
-            if size_in_mb > config.MAX_GIF_SIZE_IN_MB:
-                kwargs['gif_url'] = giphy_image.bitly
-                roboronya.send_message(
-                    conv,
-                    (
-                        'Sorry {user_fullname} gif is too large. '
-                        'Here\'s the link instead: {gif_url}'
-                    ),
-                    **kwargs
-                )
-            else:
-                roboronya.send_file(
-                    conv,
-                    'Here\'s your gif {user_fullname}.',
-                    giphy_image.media_url,
-                    **kwargs
-                )
-        else:
-            print(
-                'Could not not find a gif for keywords: '
-                '{}'.format(cmd_args)
-            )
-            kwargs['cmd_args'] = cmd_args
-            roboronya.send_message(
-                conv,
-                (
-                    'Sorry {user_fullname} I could not find '
-                    'a gif for your keywords: {cmd_args}.'
-                ),
-                **kwargs
-            )
-
-    @staticmethod
-    @requires_args
     def fastgif(roboronya, conv, cmd_args, **kwargs):
         """
         /fastgif command. Searches for a gif and sends the url.
         """
         kwargs['gif_url'] = get_gif_url(cmd_args)
+        logger.info(
+            '{} Found gif for keywords: ({}). Url: {}.'.format(
+                kwargs['log_tag'], ', '.join(cmd_args), kwargs['gif_url'],
+            )
+        )
         roboronya.send_message(
             conv,
             (
@@ -380,10 +338,9 @@ class Commands(object):
         """
         /love command. From Robornya with love.
         """
+        message = 'I love you {user_fullname} <3.'
         roboronya.send_message(
-            conv,
-            'I love you {user_fullname} <3.',
-            **kwargs
+            conv, message, **kwargs
         )
 
     @staticmethod
@@ -392,9 +349,10 @@ class Commands(object):
         /cointoss command. Tosses a coin to make a decision as gods should,
         based on luck.
         """
+        message = 'heads' if random.getrandbits(1) == 0 else 'tails'
         roboronya.send_message(
             conv,
-            'heads' if random.getrandbits(1) == 0 else 'tails',
+            message,
             **kwargs
         )
 
@@ -403,10 +361,9 @@ class Commands(object):
         """
         /ping command. Check bot status.
         """
+        message = '**Pong!**'
         roboronya.send_message(
-            conv,
-            '**Pong!**',
-            **kwargs
+            conv, message, **kwargs
         )
 
     @staticmethod
@@ -414,11 +371,9 @@ class Commands(object):
         """
         /magicball command: Randomly answer like a magic ball.
         """
-
+        message = random.choice(config.MAGICBALL_ANSWERS)
         roboronya.send_message(
-            conv,
-            random.choice(config.MAGICBALL_ANSWERS),
-            **kwargs
+            conv, message, **kwargs
         )
 
     def caracola(*args, **kwargs):
@@ -473,24 +428,24 @@ class Commands(object):
 
     @staticmethod
     @requires_args
-    def gfycat(roboronya, conv, cmd_args, **kwargs):
+    def gif(roboronya, conv, cmd_args, **kwargs):
         """
-        /gfycat command: Like the /gif command but instead
-        of using giphy it uses gfycat.
+        /gif command: Translates commands argument words as
+        gifs using gfycat.
         """
         gif_url = get_gif_url(cmd_args)
         if gif_url:
+            message = 'Here\'s your gif {user_fullname}.'
             roboronya.send_file(
-                conv,
-                'Here\'s your gif {user_fullname}.',
-                gif_url,
-                **kwargs
+                conv, message, gif_url, **kwargs
             )
         else:
             roboronya.send_message(
                 conv,
-                'Sorry {user_fullname}, I couldn\'t find'
-                ' a gif for you.',
+                (
+                    'Sorry {user_fullname}, I couldn\'t find '
+                    'a gif for you.'
+                ),
                 **kwargs
             )
 
@@ -605,15 +560,12 @@ class Commands(object):
         ).json()
         if random_joke.get('type') == 'success':
             return roboronya.send_message(
-                conv,
-                random_joke['value']['joke'],
-                **kwargs
+                conv, random_joke['value']['joke'], **kwargs
             )
-        print(
-            'Failed to retrieve joke from {}. '
+        logger.info(
+            '{} Failed to retrieve joke from {}. '
             'Got response: {}'.format(
-                config.CHUCK_API_URL,
-                random_joke,
+                kwargs['log_tag'], config.CHUCK_API_URL, random_joke,
             )
         )
         return roboronya.send_message(
@@ -631,10 +583,7 @@ class Commands(object):
             config.YES_OR_NO_API
         ).json()
         return roboronya.send_file(
-            conv,
-            response_json['answer'],
-            response_json['image'],
-            **kwargs
+            conv, response_json['answer'], response_json['image'], **kwargs
         )
 
     @staticmethod
@@ -642,21 +591,16 @@ class Commands(object):
     def piratify(roboronya, conv, cmd_args, **kwargs):
         response_json = requests.get(
             config.PIRATE_API_URL,
-            params={
-                'format': 'json',
-                'text': ' '.join(cmd_args)
-            }
+            params={'format': 'json', 'text': ' '.join(cmd_args)}
         ).json()
         if response_json.get('translation'):
-            return roboronya.send_message(
-                conv,
-                '**{}**'.format(response_json['translation']['pirate']),
-                **kwargs
+            message = '**{}**'.format(response_json['translation']['pirate'])
+        else:
+            message = (
+                'Sorry {user_fullname}, I could not piratify your message.'
             )
         return roboronya.send_message(
-            conv,
-            'Sorry {user_fullname}, I could not piratify your message.',
-            **kwargs
+            conv, message, **kwargs
         )
 
     @staticmethod
@@ -664,23 +608,22 @@ class Commands(object):
         response_json = requests.get(
             config.CATFACTS_API_URL
         ).json()
-        if (
+        is_valid_response = (
             response_json.get('success') == 'true' and
             response_json.get('facts')
-        ):
-            return roboronya.send_message(
-                conv,
-                (
-                    '**Did you know?** {}'.format(
-                        '\n'.join(response_json['facts'])
-                    )
-                ),
-                **kwargs
+        )
+        if is_valid_response:
+            message = (
+                '**Did you know?** {}'.format(
+                    '\n'.join(response_json['facts'])
+                )
+            )
+        else:
+            message = (
+                'Sorry {user_fullname}, I could not find any cat facts.'
             )
         return roboronya.send_message(
-            conv,
-            'Sorry {user_fullname}, I could not find any cat facts.',
-            **kwargs
+            conv, message, **kwargs
         )
 
     @staticmethod
@@ -689,8 +632,8 @@ class Commands(object):
             config.XKCD_LATEST_URL
         ).json()
         current_num = response_json['num']
-        kwargs['current_num'] = current_num
         if cmd_args:
+            kwargs['current_num'] = current_num
             try:
                 comic_num = int(cmd_args[0])
             except ValueError:
@@ -715,9 +658,10 @@ class Commands(object):
         ).json()
         return roboronya.send_file(
             conv,
-            'Title: {}\nURL: {}'.format(
-                response_json['title'],
-                response_json['img'],
+            (
+                'Title: {}\nURL: {}'.format(
+                    response_json['title'], response_json['img'],
+                )
             ),
             response_json['img'],
             **kwargs
@@ -747,9 +691,10 @@ class Commands(object):
             }
         )
         xml = BeautifulSoup(response.content, 'html.parser')
+        message = 'Here\'s your cat {user_fullname}:'
         return roboronya.send_file(
             conv,
-            'Here\'s your cat {user_fullname}:',
+            message,
             xml.images.image.url.text,
             **kwargs
         )

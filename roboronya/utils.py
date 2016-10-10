@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
-import hangups
+import logging
 import os
+import uuid
+
+import hangups
+
+from roboronya.config import LOG_LEVEL
 
 
 def create_path_if_not_exists(file_path):
@@ -9,9 +14,7 @@ def create_path_if_not_exists(file_path):
 
 
 def get_file_extension(file_name):
-    return os.path.splitext(
-        file_name
-    )[1][1:]
+    return os.path.splitext(file_name)[1][1:]
 
 
 def get_auth_stdin_patched(email, password, refresh_token_filename):
@@ -38,3 +41,23 @@ def get_auth_stdin_patched(email, password, refresh_token_filename):
         CredentialsPromptPatch(),
         hangups.auth.RefreshTokenCache(refresh_token_filename)
     )
+
+
+def get_logger(name):
+    logger = logging.getLogger(name)
+    logger.setLevel(LOG_LEVEL)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(LOG_LEVEL)
+
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    return logger
+
+
+def get_uuid():
+    return str(uuid.uuid4()).replace('-', '')[:8].upper()

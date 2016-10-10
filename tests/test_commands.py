@@ -17,6 +17,7 @@ def cmd_kwargs():
     def factory(cmd_name, original_message=''):
         return {
             'command_name': cmd_name,
+            'log_tag': 'some-log-tag',
             'original_message': original_message,
             'user_fullname': 'Foo Bar',
         }
@@ -86,7 +87,8 @@ def test_fastgif(mock_roboronya, cmd_kwargs):
             Commands.fastgif(mock_roboronya, None, [], **cmd_kwargs('fastgif'))
 
         Commands.fastgif(
-            mock_roboronya, None, ['foo'], **cmd_kwargs('fastgif'))
+            mock_roboronya, None, ['foo'], **cmd_kwargs('fastgif')
+        )
         assert fake_gif_url in mock_roboronya.message
 
 

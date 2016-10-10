@@ -3,7 +3,6 @@ import os
 import shutil
 import sys
 import time
-import uuid
 
 import asyncio
 import hangups
@@ -15,7 +14,12 @@ from roboronya.config import (
     MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH,
 )
 from roboronya.exceptions import CommandValidationException
-from roboronya.utils import create_path_if_not_exists, get_file_extension
+from roboronya.utils import (
+    create_path_if_not_exists, get_file_extension,
+    get_logger, get_uuid
+)
+
+logger = get_logger(__name__)
 
 
 class Roboronya(object):
@@ -25,93 +29,118 @@ class Roboronya(object):
     to support more commands / plugins.
     But it probably will...
     """
+    def __init__(self):
+        self._users = {}
 
     @asyncio.coroutine
     def _on_hangups_connect(self):
-        print('Connected.')
+        logger.info('Roboronya Connected.')
         self._user_list, self._conv_list = (
             yield from hangups.conversation.
             build_user_conversation_list(self._hangups)
         )
-        self._conv_list.on_event.add_observer(
-            self._on_hangups_event
-        )
+        self._conv_list.on_event.add_observer(self._on_hangups_event)
 
     @asyncio.coroutine
     def _on_disconnect(self):
-        print('Disconnected.')
+        logger.info('Roboronya Disconnected.')
 
     @asyncio.coroutine
     def _on_hangups_event(self, conv_event):
-        print('Conversation event received.')
         if isinstance(conv_event, hangups.ChatMessageEvent):
             conv = self._conv_list.get(conv_event.conversation_id)
+            # Store user reference under generated unique ID.
+            if not conv_event.user_id in self._users:
+                self._users[conv_event.user_id] = get_uuid()
             self._handle_message(conv, conv_event)
 
+    def _process_commands(self, conv, conv_event):
+        commands = []
+        for token in conv_event.text.split():
+            if '/' in token:
+                commands.append({
+                    'args': [self, conv, []],
+                    'name': token.replace('/', ''),
+                    'uid': get_uuid()
+                })
+            else:
+                if commands:
+                    commands[-1]['args'][-1].append(token)
+
+        # Filter out non existeng commands
+        return list(filter(
+            lambda c: hasattr(Commands, c['name']), commands
+        ))
+
     def _handle_message(self, conv, conv_event):
-        asyncio.set_event_loop(self._loop)
         user = conv.get_user(conv_event.user_id)
+        user_uid = self._users[conv_event.user_id]
+        # Ignore roboronya's own user messages
         if user.is_self:
             return
 
-        message = conv_event.text
-        possible_commands = []
-        for token in message.split():
-            if '/' in token:
-                possible_commands.append({
-                    'args': [self, conv, []],
-                    'name': token.replace('/', '')
-                })
-            else:
-                if possible_commands:
-                    possible_commands[-1]['args'][-1].append(token)
-
         kwargs = {
-            'original_message': message,
+            'log_tag': user_uid,
+            'original_message': conv_event.text,
             'user_fullname': user.full_name,
         }
-
-        if len(possible_commands) > MAX_COMMANDS_PER_MESSAGE:
-            kwargs['num_cmds'] = MAX_COMMANDS_PER_MESSAGE
+        logger.info(
+            '[{}] Conversation event received.'.format(user_uid)
+        )
+        commands = self._process_commands(conv, conv_event)
+        if len(commands) > MAX_COMMANDS_PER_MESSAGE:
+            logger.info(
+                '[{}] Maximum number of commands per message exceeded '
+                'Got: {}. Max: {}.'.format(
+                    user_uid,
+                    len(commands),
+                    MAX_COMMANDS_PER_MESSAGE
+                )
+            )
+            kwargs['max_num_cmds'] = MAX_COMMANDS_PER_MESSAGE
             return self.send_message(
                 conv,
                 (
                     'Sorry {user_fullname} I can only process '
-                    '{num_cmds} command(s) per message.'
+                    '{max_num_cmds} command(s) per message.'
                 ),
                 **kwargs
             )
 
-        for command in possible_commands:
+        for command in commands:
             kwargs['command_name'] = command['name']
+            kwargs['log_tag'] = '[{}][{}]'.format(
+                user_uid, command['uid'],
+            )
             try:
-                command_func = getattr(Commands, command['name'], None)
-                if command_func:
-                    print(
-                        'Running /{} command with arguments: [{}].'.format(
-                            command['name'],
-                            ', '.join(command['args'][-1])
-                        )
+                logger.info(
+                    '{} Running /{} command with arguments: '
+                    '({}).'.format(
+                        kwargs['log_tag'],
+                        command['name'],
+                        ', '.join(command['args'][-1])
                     )
-                    command_func(*command['args'], **kwargs)
-                else:
-                    print(
-                        'Could not find command "/{}".'.format(
-                            command['name'],
-                        )
-                    )
+                )
+                command_func = getattr(Commands, command['name'])
+                command_func(*command['args'], **kwargs)
             except CommandValidationException as e:
-                print(e)
+                logger.info(
+                    '{} Validation error on the command /{}. '
+                    'Error: {}'.format(
+                        kwargs['log_tag'], command['name'], e
+                    )
+                )
                 self.send_message(
-                    conv,
-                    str(e),
-                    **kwargs
+                    conv, str(e), **kwargs
                 )
             except Exception as e:
-                print(
-                    'Something went horribly wrong with the /{} command. '
-                    'Error: {}'.format(command['name'], e)
+                logger.info(
+                    '{} Something went horribly wrong with the /{} command. '
+                    'Error: {}.'.format(
+                        kwargs['log_tag'], command['name'], e
+                    )
                 )
+                logger.exception(e)
                 self.send_message(
                     conv,
                     (
@@ -122,6 +151,9 @@ class Roboronya(object):
                 )
 
     def send_message(self, conv, text, **kwargs):
+        logger.info(
+            '{} Sending response.'.format(kwargs['log_tag'])
+        )
         asyncio.async(conv.send_message(
             hangups.ChatMessageSegment.from_str(
                 text.format(**kwargs)
@@ -133,12 +165,14 @@ class Roboronya(object):
         """
         Send a file to the conversation.
         """
+        logger.info(
+            '{} Uploading file from url: {}'.format(
+                kwargs['log_tag'], media_url,
+            )
+        )
         response = requests.get(media_url)
         file_path = '{}.{}'.format(
-            os.path.join(
-                IMAGES_DIR,
-                str(uuid.uuid4())
-            ),
+            os.path.join(IMAGES_DIR, get_uuid()),
             get_file_extension(media_url)
         )
 
@@ -147,10 +181,7 @@ class Roboronya(object):
             img.write(response.content)
 
         self.send_message(
-            conv,
-            text,
-            image_file=open(file_path, 'rb+'),
-            **kwargs
+            conv, text, image_file=open(file_path, 'rb+'), **kwargs
         )
 
     def login(self):
@@ -178,27 +209,24 @@ class Roboronya(object):
                         self._hangups.connect()
                     )
                 except Exception as e:
-                    print(
-                        'Roboronya disconnected. Error: {}'.format(
-                            e
-                        )
-                    )
-                    print(
+                    logger.info(
+                        'Roboronya disconnected. '
                         'Retrying {}/{}...'.format(
                             retry + 1,
                             MAX_RECONNECT_RETRIES
                         )
                     )
+                    logger.exception(e)
                     time.sleep(5 + retry * 5)
 
-            print('Roboronya is exiting.')
+            logger.info('Roboronya is exiting.')
             sys.exit(0)
 
-        print('Invalid login.')
+        logger.info('Invalid login.')
         sys.exit(0)
 
     def stop(self):
-        print('Roboronya was stopped.')
+        logger.info('Roboronya was stopped.')
         if os.path.exists(IMAGES_DIR):
             shutil.rmtree(IMAGES_DIR)
         if hasattr(self, '_hangups'):
