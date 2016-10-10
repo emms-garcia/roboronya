@@ -56,7 +56,7 @@ class Roboronya(object):
 
     def _process_commands(self, conv, conv_event):
         commands = []
-        for token in conv_event.text.split():
+        for token in conv_event.text.lower().split():
             if '/' in token:
                 commands.append({
                     'args': [self, conv, []],
