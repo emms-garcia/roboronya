@@ -14,7 +14,7 @@ REFRESH_TOKEN_PATH = os.path.join(RUNTIME_DIR, 'refresh_token.txt')
 
 LOG_LEVEL = logging.INFO
 MAX_RECONNECT_RETRIES = 5
-MAX_COMMANDS_PER_MESSAGE = 1
+MAX_COMMANDS_PER_MESSAGE = 2
 
 """
     Command specific configuration.

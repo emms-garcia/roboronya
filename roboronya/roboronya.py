@@ -67,18 +67,18 @@ class Roboronya(object):
                 if commands:
                     commands[-1]['args'][-1].append(token)
 
-        # Filter out non existeng commands
+        # Filter out non-existeng commands.
         return list(filter(
             lambda c: hasattr(Commands, c['name']), commands
         ))
 
     def _handle_message(self, conv, conv_event):
         user = conv.get_user(conv_event.user_id)
-        user_uid = self._users[conv_event.user_id]
-        # Ignore roboronya's own user messages
+        # Ignore roboronya's own messages.
         if user.is_self:
             return
 
+        user_uid = self._users[conv_event.user_id]
         kwargs = {
             'log_tag': user_uid,
             'original_message': conv_event.text,
@@ -90,7 +90,7 @@ class Roboronya(object):
         commands = self._process_commands(conv, conv_event)
         if len(commands) > MAX_COMMANDS_PER_MESSAGE:
             logger.info(
-                '[{}] Maximum number of commands per message exceeded '
+                '[{}] Maximum number of commands per message exceeded. '
                 'Got: {}. Max: {}.'.format(
                     user_uid,
                     len(commands),
@@ -109,7 +109,7 @@ class Roboronya(object):
 
         for command in commands:
             kwargs['command_name'] = command['name']
-            kwargs['log_tag'] = '[{}][{}]'.format(
+            kwargs['log_tag'] = '[{}-{}]'.format(
                 user_uid, command['uid'],
             )
             try:
@@ -122,7 +122,7 @@ class Roboronya(object):
                     )
                 )
                 command_func = getattr(Commands, command['name'])
-                command_func(*command['args'], **kwargs)
+                return command_func(*command['args'], **kwargs)
             except CommandValidationException as e:
                 logger.info(
                     '{} Validation error on the command /{}. '
@@ -130,22 +130,22 @@ class Roboronya(object):
                         kwargs['log_tag'], command['name'], e
                     )
                 )
-                self.send_message(
+                return self.send_message(
                     conv, str(e), **kwargs
                 )
             except Exception as e:
                 logger.info(
-                    '{} Something went horribly wrong with the /{} command. '
+                    '{} Something went wrong with the /{} command. '
                     'Error: {}.'.format(
                         kwargs['log_tag'], command['name'], e
                     )
                 )
                 logger.exception(e)
-                self.send_message(
+                return self.send_message(
                     conv,
                     (
                         'Sorry {user_fullname} I failed to process '
-                        'your command: "{original_message}".'
+                        'your command: "/{command_name}".'
                     ),
                     **kwargs
                 )

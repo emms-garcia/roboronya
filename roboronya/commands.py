@@ -304,10 +304,8 @@ class Commands(object):
         except StopIteration:
             return roboronya.send_message(
                 conv,
-                (
-                    'No help found for command: **/{}**.'.format(
-                        cmd_args[0]
-                    )
+                'No help found for command: **/{}**.'.format(
+                    cmd_args[0]
                 ),
                 **kwargs
             )
@@ -319,17 +317,23 @@ class Commands(object):
         /fastgif command. Searches for a gif and sends the url.
         """
         kwargs['gif_url'] = get_gif_url(cmd_args)
-        logger.info(
-            '{} Found gif for keywords: ({}). Url: {}.'.format(
-                kwargs['log_tag'], ', '.join(cmd_args), kwargs['gif_url'],
+        if kwargs['gif_url']:
+            logger.info(
+                '{} Found gif for keywords: ({}). Url: {}.'.format(
+                    kwargs['log_tag'], ', '.join(cmd_args), kwargs['gif_url'],
+                )
             )
-        )
-        roboronya.send_message(
+            return roboronya.send_message(
+                conv,
+                (
+                    'Here is your URL to the gif {user_fullname}: '
+                    '{gif_url} ... love you btw'
+                ),
+                **kwargs
+            )
+        return roboronya.send_message(
             conv,
-            (
-                'Here is your URL to the gif {user_fullname}: '
-                '{gif_url} ... love you btw'
-            ),
+            'Sorry {user_fullname}, I could not find a fast gif for you.',
             **kwargs
         )
 
@@ -339,7 +343,7 @@ class Commands(object):
         /love command. From Robornya with love.
         """
         message = 'I love you {user_fullname} <3.'
-        roboronya.send_message(
+        return roboronya.send_message(
             conv, message, **kwargs
         )
 
@@ -350,10 +354,8 @@ class Commands(object):
         based on luck.
         """
         message = 'heads' if random.getrandbits(1) == 0 else 'tails'
-        roboronya.send_message(
-            conv,
-            message,
-            **kwargs
+        return roboronya.send_message(
+            conv, message, **kwargs
         )
 
     @staticmethod
@@ -362,7 +364,7 @@ class Commands(object):
         /ping command. Check bot status.
         """
         message = '**Pong!**'
-        roboronya.send_message(
+        return roboronya.send_message(
             conv, message, **kwargs
         )
 
@@ -372,7 +374,7 @@ class Commands(object):
         /magicball command: Randomly answer like a magic ball.
         """
         message = random.choice(config.MAGICBALL_ANSWERS)
-        roboronya.send_message(
+        return roboronya.send_message(
             conv, message, **kwargs
         )
 
@@ -380,7 +382,7 @@ class Commands(object):
         """
         /caracola command: Alias for magicball.
         """
-        Commands.magicball(*args, **kwargs)
+        return Commands.magicball(*args, **kwargs)
 
     @staticmethod
     @requires_args
@@ -420,7 +422,7 @@ class Commands(object):
                 choloWords.append(choloWord)
             return choloWords
 
-        roboronya.send_message(
+        return roboronya.send_message(
             conv,
             ' '.join(_cholify(cmd_args)),
             **kwargs
@@ -436,11 +438,11 @@ class Commands(object):
         gif_url = get_gif_url(cmd_args)
         if gif_url:
             message = 'Here\'s your gif {user_fullname}.'
-            roboronya.send_file(
+            return roboronya.send_file(
                 conv, message, gif_url, **kwargs
             )
         else:
-            roboronya.send_message(
+            return roboronya.send_message(
                 conv,
                 (
                     'Sorry {user_fullname}, I couldn\'t find '
@@ -524,7 +526,7 @@ class Commands(object):
                     **kwargs)
 
     def gato(*args, **kwargs):
-        Commands.tictactoe(*args, **kwargs)
+        return Commands.tictactoe(*args, **kwargs)
 
     @staticmethod
     def whatis(roboronya, conv, cmd_args, **kwargs):
@@ -548,7 +550,7 @@ class Commands(object):
         if example != '':
             text += '\n\nExample:\n*{}*'.format(example)
 
-        roboronya.send_message(
+        return roboronya.send_message(
             conv,
             text,
             **kwargs)
@@ -594,13 +596,15 @@ class Commands(object):
             params={'format': 'json', 'text': ' '.join(cmd_args)}
         ).json()
         if response_json.get('translation'):
-            message = '**{}**'.format(response_json['translation']['pirate'])
-        else:
-            message = (
-                'Sorry {user_fullname}, I could not piratify your message.'
+            return roboronya.send_message(
+                conv,
+                '**{}**'.format(response_json['translation']['pirate']),
+                **kwargs
             )
         return roboronya.send_message(
-            conv, message, **kwargs
+            conv,
+            'Sorry {user_fullname}, I could not piratify your message.',
+            **kwargs
         )
 
     @staticmethod
@@ -613,17 +617,17 @@ class Commands(object):
             response_json.get('facts')
         )
         if is_valid_response:
-            message = (
+            return roboronya.send_message(
+                conv,
                 '**Did you know?** {}'.format(
                     '\n'.join(response_json['facts'])
-                )
-            )
-        else:
-            message = (
-                'Sorry {user_fullname}, I could not find any cat facts.'
+                ),
+                **kwargs
             )
         return roboronya.send_message(
-            conv, message, **kwargs
+            conv,
+            'Sorry {user_fullname}, I could not find any cat facts.',
+            **kwargs
         )
 
     @staticmethod
@@ -693,8 +697,5 @@ class Commands(object):
         xml = BeautifulSoup(response.content, 'html.parser')
         message = 'Here\'s your cat {user_fullname}:'
         return roboronya.send_file(
-            conv,
-            message,
-            xml.images.image.url.text,
-            **kwargs
+            conv, message, xml.images.image.url.text, **kwargs
         )
