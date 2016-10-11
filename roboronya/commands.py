@@ -802,7 +802,7 @@ class Commands(object):
         roboronya.set_state(
             'users',
             {
-                kwargs['user_uid']: {
+                cmd_args[0]: {
                     'alias': kwargs['alias']
                 }
             }
