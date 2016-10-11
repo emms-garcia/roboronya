@@ -4,12 +4,14 @@ import shutil
 import sys
 import time
 
+import aiml
 import asyncio
 import hangups
 import requests
 
 from roboronya.commands import Commands
 from roboronya.config import (
+    ALICE_DIR,
     IMAGES_DIR, MAX_COMMANDS_PER_MESSAGE,
     MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH,
 )
@@ -30,6 +32,11 @@ class Roboronya(object):
     But it probably will...
     """
     def __init__(self):
+        self._kernel = aiml.Kernel()
+        for fn in os.listdir(ALICE_DIR):
+            if 'aiml' in fn:
+                self._kernel.learn(os.path.join(ALICE_DIR, fn))
+
         self._state = {
             'users': {}
         }

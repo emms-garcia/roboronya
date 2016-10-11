@@ -818,3 +818,27 @@ class Commands(object):
             ),
             **kwargs
         )
+
+    @staticmethod
+    def lenny(roboronya, conv, cmd_args, **kwargs):
+        return roboronya.send_message(
+            conv,
+            '( ͡° ͜ʖ ͡°) ',
+            **kwargs
+        )
+
+    @staticmethod
+    def roboronya(roboronya, conv, cmd_args, **kwargs):
+        question = ' '.join(cmd_args)
+        response = roboronya._kernel.respond(question)
+        response = response or (
+            'I\'m sorry. My responses are limited. '
+            'You must ask the right questions.'
+        )
+        return roboronya.send_message(
+            conv,
+            (
+                str(response)
+            ),
+            **kwargs
+        )

@@ -8,7 +8,7 @@ import os
 CWD = os.path.dirname(os.path.abspath(__file__))
 
 RUNTIME_DIR = os.path.join(CWD, 'runtime')
-
+ALICE_DIR = os.path.join(RUNTIME_DIR, 'alice')
 IMAGES_DIR = os.path.join(RUNTIME_DIR, 'images')
 REFRESH_TOKEN_PATH = os.path.join(RUNTIME_DIR, 'refresh_token.txt')
 

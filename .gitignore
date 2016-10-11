@@ -1,6 +1,6 @@
 refresh_token.txt
 __pycache__/
-runtime/
+runtime/images/
 .cache
 *.egg-info/
 build/
