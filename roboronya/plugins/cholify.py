@@ -4,6 +4,7 @@ from roboronya.plugins.plugin import *
 
 class Command(Plugin):
 
+    @requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
 
         def _cholify(words):

@@ -4,6 +4,7 @@ from roboronya.plugins.plugin import *
 
 class Command(Plugin):
 
+    @requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
         response_json = requests.get(
             config.PIRATE_API_URL,

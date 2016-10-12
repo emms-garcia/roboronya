@@ -4,12 +4,13 @@ from roboronya.plugins.plugin import *
 
 class Command(Plugin):
 
+    @requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
         """
         /gif command: Translates commands argument words as
         gifs using gfycat.
         """
-        gif_url = Plugin.get_gif_url(cmd_args)
+        gif_url = get_gif_url(cmd_args)
         if gif_url:
             message = 'Here\'s your gif {user_fullname}.'
             return roboronya.send_file(

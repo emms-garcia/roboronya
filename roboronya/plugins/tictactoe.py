@@ -106,7 +106,7 @@ class TicTacToe(object):
 
 class Command(Plugin):
 
-    @Plugin.requires_args
+    @requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
         Plugin.run(roboronya, conv, cmd_args, **kwargs)
         # Let's play some tic tac toe with Roboronya.

@@ -4,12 +4,12 @@ from roboronya.plugins.plugin import *
 
 class Command(Plugin):
 
-    @Plugin.requires_args
+    @requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
         """
         /fastgif command. Searches for a gif and sends the url.
         """
-        kwargs['gif_url'] = Plugin.get_gif_url(cmd_args)
+        kwargs['gif_url'] = get_gif_url(cmd_args)
         if kwargs['gif_url']:
             Plugin.logger.info(
                 '{} Found gif for keywords: ({}). Url: {}.'.format(
