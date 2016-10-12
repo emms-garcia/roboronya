@@ -11,7 +11,7 @@ class Command(Plugin):
         """
         kwargs['gif_url'] = get_gif_url(cmd_args)
         if kwargs['gif_url']:
-            Plugin.logger.info(
+            logger.info(
                 '{} Found gif for keywords: ({}). Url: {}.'.format(
                     kwargs['log_tag'], ', '.join(cmd_args), kwargs['gif_url'],
                     )
