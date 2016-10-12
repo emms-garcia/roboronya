@@ -1,0 +1,27 @@
+description = "Get a random fact about your furry friends."
+
+from roboronya.plugins.plugin import *
+
+class Command(Plugin):
+
+    def run(roboronya, conv, cmd_args, **kwargs):
+        response_json = requests.get(
+            config.CATFACTS_API_URL
+        ).json()
+        is_valid_response = (
+            response_json.get('success') == 'true' and
+            response_json.get('facts')
+        )
+        if is_valid_response:
+            return roboronya.send_message(
+                conv,
+                '**Did you know?** {}'.format(
+                    '\n'.join(response_json['facts'])
+                ),
+                **kwargs
+            )
+        return roboronya.send_message(
+            conv,
+            'Sorry {user_fullname}, I could not find any cat facts.',
+            **kwargs
+        )

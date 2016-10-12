@@ -8,7 +8,6 @@ import asyncio
 import hangups
 import requests
 
-from roboronya.commands import Commands
 from roboronya.config import (
     IMAGES_DIR, MAX_COMMANDS_PER_MESSAGE,
     MAX_RECONNECT_RETRIES, REFRESH_TOKEN_PATH,
@@ -18,6 +17,8 @@ from roboronya.utils import (
     create_path_if_not_exists, dict_update,
     get_file_extension, get_logger, get_uuid
 )
+
+import roboronya.plugins as p
 
 logger = get_logger(__name__)
 
@@ -39,8 +40,7 @@ class Roboronya(object):
     def _on_hangups_connect(self):
         logger.info('Roboronya Connected.')
         self._user_list, self._conv_list = (
-            yield from hangups.conversation.
-            build_user_conversation_list(self._hangups)
+            yield from hangups.conversation.build_user_conversation_list(self._hangups)
         )
         self._conv_list.on_event.add_observer(self._on_hangups_event)
 
@@ -79,9 +79,7 @@ class Roboronya(object):
                     commands[-1]['args'][-1].append(token)
 
         # Filter out non-existeng commands.
-        return list(filter(
-            lambda c: hasattr(Commands, c['name']), commands
-        ))
+        return list(filter(lambda c: c['name'] in p.__all__, commands))
 
     def _handle_message(self, conv, conv_event):
         user = conv.get_user(conv_event.user_id)
@@ -136,8 +134,7 @@ class Roboronya(object):
                         ', '.join(command['args'][-1])
                     )
                 )
-                command_func = getattr(Commands, command['name'])
-                return command_func(*command['args'], **kwargs)
+                return p.run(*command['args'], command = command['name'], **kwargs)
             except CommandValidationException as e:
                 logger.info(
                     '{} Validation error on the command /{}. '
