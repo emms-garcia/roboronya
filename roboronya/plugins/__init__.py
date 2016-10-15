@@ -20,7 +20,7 @@ for imported in __all__:
     
     for (name, clazz) in list:
         if issubclass(clazz, plugin.Plugin) and clazz != plugin.Plugin:
-            if clazz.name not in commands:
+            if hasattr(clazz, 'description') and hasattr(clazz, 'name') and clazz.name not in commands:
                 commands.append(clazz.name)
                 run_commands[clazz.name] = clazz.run
                 if hasattr(clazz, 'aliases'):
