@@ -1,12 +1,16 @@
-description = "Get a random XKCD comic, or specify a comic number. i. e. */xkcd* or */xkcd 10*"
-
-from roboronya.plugins.plugin import *
+import random
+import requests
+from roboronya.plugins.plugin import Plugin
+from roboronya.config import XKCD_LATEST_URL, XKCD_DETAIL_URL
 
 class Command(Plugin):
 
+    description = 'Get a random XKCD comic, or specify a comic number. i. e. */xkcd* or */xkcd 10*'
+    name = 'xkcd'
+    
     def run(roboronya, conv, cmd_args, **kwargs):
         response_json = requests.get(
-            config.XKCD_LATEST_URL
+            XKCD_LATEST_URL
         ).json()
         current_num = response_json['num']
         if cmd_args:
@@ -31,7 +35,7 @@ class Command(Plugin):
             comic_num = random.randint(1, current_num)
 
         response_json = requests.get(
-            config.XKCD_DETAIL_URL.format(comic_num=comic_num)
+            XKCD_DETAIL_URL.format(comic_num=comic_num)
         ).json()
         return roboronya.send_file(
             conv,

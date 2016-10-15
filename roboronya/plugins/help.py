@@ -1,8 +1,9 @@
-description = "Shows the available commands."
+from roboronya.plugins.plugin import Plugin
 
-from roboronya.plugins.plugin import *
+class Help(Plugin):
 
-class Command(Plugin):
+    description = 'Shows the available commands.'
+    name = 'help'
 
     def run(roboronya, conv, cmd_args, **kwargs):
         """

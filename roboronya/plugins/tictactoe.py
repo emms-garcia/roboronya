@@ -1,6 +1,5 @@
-description = "Play Tic Tac Toe with Roboronya, beware of her skills. Check */tictactoe help* for more info."
-
-from roboronya.plugins.plugin import *
+import random
+from roboronya.plugins.plugin import Plugin
 
 class TicTacToe(object):
     
@@ -106,7 +105,11 @@ class TicTacToe(object):
 
 class Command(Plugin):
 
-    @requires_args
+    description = 'Play Tic Tac Toe with Roboronya, beware of her skills. Check */tictactoe help* for more info.'
+    name = 'tictactoe'
+    aliases = ['gato']
+    
+    @Plugin.requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
         Plugin.run(roboronya, conv, cmd_args, **kwargs)
         # Let's play some tic tac toe with Roboronya.

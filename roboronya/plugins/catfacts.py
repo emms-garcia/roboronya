@@ -1,12 +1,15 @@
-description = "Get a random fact about your furry friends."
+import requests
+from roboronya.plugins.plugin import Plugin
+from roboronya.config import CATFACTS_API_URL
 
-from roboronya.plugins.plugin import *
+class Catfacts(Plugin):
 
-class Command(Plugin):
+    description = 'Get a random fact about your furry friends.'
+    name = 'catfacts'
 
     def run(roboronya, conv, cmd_args, **kwargs):
         response_json = requests.get(
-            config.CATFACTS_API_URL
+            CATFACTS_API_URL
         ).json()
         is_valid_response = (
             response_json.get('success') == 'true' and

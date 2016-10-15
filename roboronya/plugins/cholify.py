@@ -1,10 +1,12 @@
-description = "Roboronya will use her *Automated Cholification Algorithm* (Patent Pending) to translate your text to a more sophisticated language."
+import random
+from roboronya.plugins.plugin import Plugin
 
-from roboronya.plugins.plugin import *
+class Cholificator(Plugin):
 
-class Command(Plugin):
+    description = 'Roboronya will use her *Automated Cholification Algorithm* (Patent Pending) to translate your text to a more sophisticated language.'
+    name = 'cholify'
 
-    @requires_args
+    @Plugin.requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
 
         def _cholify(words):

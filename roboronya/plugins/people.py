@@ -1,9 +1,10 @@
-description = 'Display metadata about the users on the current chat.'
+from roboronya.plugins.plugin import Plugin
 
-from roboronya.plugins.plugin import *
+class People(Plugin):
 
-class Command(Plugin):
-
+    description = 'Display metadata about the users on the current chat.'
+    name = 'people'
+    
     def run(roboronya, conv, cmd_args, **kwargs):
         return roboronya.send_message(
             conv,

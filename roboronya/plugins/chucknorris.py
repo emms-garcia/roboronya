@@ -1,12 +1,15 @@
-description = 'Look for a ~~random joke~~ undeniable truth about our lord and savior.'
+import requests
+from roboronya.plugins.plugin import Plugin
+from roboronya.config import CHUCK_API_URL
 
-from roboronya.plugins.plugin import *
+class ChuckNorris(Plugin):
 
-class Command(Plugin):
+    description = 'Look for a ~~random joke~~ undeniable truth about our lord and savior.'
+    name = 'chucknorris'
 
     def run(roboronya, conv, cmd_args, **kwargs):
         random_joke = requests.get(
-            config.CHUCK_API_URL
+            CHUCK_API_URL
         ).json()
         if random_joke.get('type') == 'success':
             return roboronya.send_message(
@@ -15,7 +18,7 @@ class Command(Plugin):
         logger.info(
             '{} Failed to retrieve joke from {}. '
             'Got response: {}'.format(
-                kwargs['log_tag'], config.CHUCK_API_URL, random_joke,
+                kwargs['log_tag'], CHUCK_API_URL, random_joke,
             )
         )
         return roboronya.send_message(

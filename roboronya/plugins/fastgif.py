@@ -1,15 +1,19 @@
-description = "For faster gifs, this only sends back the gif url."
+from roboronya.plugins.plugin import Plugin
+import roboronya.utils as utils
 
-from roboronya.plugins.plugin import *
+logger = utils.get_logger(__name__)
 
-class Command(Plugin):
+class FastGif(Plugin):
 
-    @requires_args
+    description = "For faster gifs, this only sends back the gif url."
+    name = 'fastgif'
+    
+    @Plugin.requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
         """
         /fastgif command. Searches for a gif and sends the url.
         """
-        kwargs['gif_url'] = get_gif_url(cmd_args)
+        kwargs['gif_url'] = utils.get_gif_url(cmd_args)
         if kwargs['gif_url']:
             logger.info(
                 '{} Found gif for keywords: ({}). Url: {}.'.format(

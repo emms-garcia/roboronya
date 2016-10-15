@@ -1,8 +1,9 @@
-description = "From Roboronya with love."
-
-from roboronya.plugins.plugin import *
+from roboronya.plugins.plugin import Plugin
 
 class Command(Plugin):
+
+    description = 'From Roboronya with love.'
+    name = 'love'
 
     def run(roboronya, conv, cmd_args, **kwargs):
         """

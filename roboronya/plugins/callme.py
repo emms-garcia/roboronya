@@ -1,13 +1,15 @@
-description = 'Change how Roboronya calls you. i. e. */callme Bond, James Bond*'
+from roboronya.plugins.plugin import Plugin
+import roboronya.utils as utils
 
-from roboronya.plugins.plugin import *
+class Callme(Plugin):
 
-class Command(Plugin):
+    description = 'Change how Roboronya calls you. i. e. */callme Bond, James Bond*'
+    name = 'callme'
 
-    @requires_args
+    @Plugin.requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
         kwargs['alias'] = ' '.join(cmd_args)
-        invalid_alias_message = is_invalid_alias(kwargs['alias'])
+        invalid_alias_message = utils.is_invalid_alias(kwargs['alias'])
         if invalid_alias_message:
             return roboronya.send_message(
                 conv,

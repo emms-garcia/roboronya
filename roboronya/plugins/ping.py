@@ -1,8 +1,9 @@
-description = "Check if bot is online. Should always work."
+from roboronya.plugins.plugin import Plugin
 
-from roboronya.plugins.plugin import *
+class Ping(Plugin):
 
-class Command(Plugin):
+    description = "Check if bot is online. Should always work."
+    name = "ping"
 
     def run(roboronya, conv, cmd_args, **kwargs):
         """

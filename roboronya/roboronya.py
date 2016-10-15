@@ -79,7 +79,7 @@ class Roboronya(object):
                     commands[-1]['args'][-1].append(token)
 
         # Filter out non-existeng commands.
-        return list(filter(lambda c: c['name'] in p.__all__, commands))
+        return list(filter(lambda c: c['name'] in p.commands, commands))
 
     def _handle_message(self, conv, conv_event):
         user = conv.get_user(conv_event.user_id)

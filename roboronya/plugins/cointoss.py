@@ -1,8 +1,10 @@
-description = "Randomly toss a coin. 50-50 chances."
-
-from roboronya.plugins.plugin import *
+import random
+from roboronya.plugins.plugin import Plugin
 
 class Command(Plugin):
+
+    description = 'Randomly toss a coin. 50-50 chances.'
+    name = 'cointoss'
 
     def run(roboronya, conv, cmd_args, **kwargs):
         """

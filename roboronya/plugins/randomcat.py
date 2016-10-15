@@ -1,9 +1,13 @@
-description = 'Get a random feline picture. You can also specify the size of the image [small, med, full] or the format of the image [jpg, png, gif]. i. e. */randomcat size type*'
+import requests
+from bs4 import BeautifulSoup
+from roboronya.plugins.plugin import Plugin
+from roboronya.config import CAT_API_URL
 
-from roboronya.plugins.plugin import *
+class RandCat(Plugin):
 
-class Command(Plugin):
-
+    description = 'Get a random feline picture. You can also specify the size of the image [small, med, full] or the format of the image [jpg, png, gif]. i. e. */randomcat size type*'
+    name = 'randomcat'
+    
     def run(roboronya, conv, cmd_args, **kwargs):
         valid_sizes = ['small', 'med', 'full']
         valid_types = ['jpg', 'png', 'gif']
@@ -17,9 +21,9 @@ class Command(Plugin):
             cat_img_type = cmd_args[1]
 
         response = requests.get(
-            config.CAT_API_URL,
+            CAT_API_URL,
             params={
-                'api_key': config.CAT_API_KEY,
+                'api_key': CAT_API_KEY,
                 'format': 'xml',
                 'results_per_page': '1',
                 'size': cat_img_size,

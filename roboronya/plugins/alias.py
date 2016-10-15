@@ -1,10 +1,13 @@
-description = 'Change how Roboronya calls a certain user during the current session i. e. */alias user_id alias ...*\nNote: To check the user_id of a certain user use the /people command.'
+from roboronya.plugins.plugin import Plugin
+import roboronya.utils as utils
 
-from roboronya.plugins.plugin import *
+class Alias(Plugin):
 
-class Command(Plugin):
-
-    @requires_args
+    description = 'Change how Roboronya calls a certain user during the current session i. e. */alias user_id alias ...*\nNote: To check the user_id of a certain user use the /people command.'
+    
+    name = 'alias'
+    
+    @Plugin.requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
         if len(cmd_args) < 2:
             return roboronya.send_message(
@@ -23,7 +26,7 @@ class Command(Plugin):
             )
 
         kwargs['alias'] = ' '.join(cmd_args[1:])
-        invalid_alias_message = is_invalid_alias(kwargs['alias'])
+        invalid_alias_message = utils.is_invalid_alias(kwargs['alias'])
         if invalid_alias_message:
             return roboronya.send_message(
                 conv,

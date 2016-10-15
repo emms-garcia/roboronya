@@ -1,13 +1,16 @@
-description = "Translate some text to the good old pirate language."
+import requests
+from roboronya.plugins.plugin import Plugin
+from roboronya.config import PIRATE_API_URL
 
-from roboronya.plugins.plugin import *
+class Piratify(Plugin):
 
-class Command(Plugin):
+    description = 'Translate some text to the good old pirate language.'
+    name = 'piratify'
 
-    @requires_args
+    @Plugin.requires_args
     def run(roboronya, conv, cmd_args, **kwargs):
         response_json = requests.get(
-            config.PIRATE_API_URL,
+            PIRATE_API_URL,
             params={'format': 'json', 'text': ' '.join(cmd_args)}
         ).json()
         if response_json.get('translation'):
