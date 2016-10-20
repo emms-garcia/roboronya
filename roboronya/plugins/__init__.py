@@ -40,6 +40,6 @@ for imported in __all__:
 meta_dict = sorted(meta_dict, key=itemgetter('name', 'description'))
 
 def run(*args, **kwargs):
-    command = kwargs['command']
+    command = kwargs['command_name']
     run = run_commands[command]
     run(*args, **kwargs, metadata = meta_dict)

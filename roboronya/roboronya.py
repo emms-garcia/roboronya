@@ -134,7 +134,7 @@ class Roboronya(object):
                         ', '.join(command['args'][-1])
                     )
                 )
-                return p.run(*command['args'], command = command['name'], **kwargs)
+                return p.run(*command['args'], **kwargs)
             except CommandValidationException as e:
                 logger.info(
                     '{} Validation error on the command /{}. '

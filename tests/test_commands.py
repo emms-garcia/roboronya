@@ -66,7 +66,7 @@ def test_get_gif_url(mock_request):
 
 
 def test_help(mock_roboronya, cmd_kwargs):
-    Commands.run(mock_roboronya, None, [], **cmd_kwargs('help'), command = 'help')
+    Commands.run(mock_roboronya, None, [], **cmd_kwargs('help'))
     # Check command is in help list
     for command_help in Commands.__all__:
         assert command_help in mock_roboronya.message
@@ -77,8 +77,7 @@ def test_help(mock_roboronya, cmd_kwargs):
             mock_roboronya,
             None,
             [command_help],
-            **cmd_kwargs('help'),
-            command = 'help'
+            **cmd_kwargs('help')
         )
         assert command_help in mock_roboronya.message
 
@@ -88,26 +87,26 @@ def test_fastgif(mock_roboronya, cmd_kwargs):
     with mock.patch('roboronya.utils.get_gif_url') as mock_get_gif_url:
         mock_get_gif_url.return_value = fake_gif_url
         with pytest.raises(CommandValidationException):
-            Commands.run(mock_roboronya, None, [], **cmd_kwargs('fastgif'), command = 'fastgif')
+            Commands.run(mock_roboronya, None, [], **cmd_kwargs('fastgif'))
 
         Commands.run(
-            mock_roboronya, None, ['foo'], **cmd_kwargs('fastgif'), command = 'fastgif'
+            mock_roboronya, None, ['foo'], **cmd_kwargs('fastgif')
         )
         assert fake_gif_url in mock_roboronya.message
 
 
 def test_love(mock_roboronya, cmd_kwargs):
-    Commands.run(mock_roboronya, None, [], **cmd_kwargs('love'), command = 'love')
+    Commands.run(mock_roboronya, None, [], **cmd_kwargs('love'))
     assert 'I love you Foo Bar <3' in mock_roboronya.message
 
 
 def test_cointoss(mock_roboronya, cmd_kwargs):
-    Commands.run(mock_roboronya, None, [], **cmd_kwargs('cointoss'), command = 'cointoss')
+    Commands.run(mock_roboronya, None, [], **cmd_kwargs('cointoss'))
     assert mock_roboronya.message in ['heads', 'tails']
 
 
 def test_magicball(mock_roboronya, cmd_kwargs):
-    Commands.run(mock_roboronya, None, [], **cmd_kwargs('magicball'), command ='magicball')
+    Commands.run(mock_roboronya, None, [], **cmd_kwargs('magicball'))
     assert any([
         answer.format(user_fullname='Foo Bar') == mock_roboronya.message
         for answer in config.MAGICBALL_ANSWERS
