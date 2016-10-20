@@ -6,6 +6,9 @@ import uuid
 
 import hangups
 
+import random
+import requests
+from roboronya import config
 from roboronya.config import LOG_LEVEL
 
 
@@ -72,3 +75,24 @@ def dict_update(d, u):
         else:
             d[k] = u[k]
     return d
+
+def is_invalid_alias(alias):
+    if len(alias) > config.MAX_ALIAS_LENGTH:
+        return 'Sorry {user_fullname}, that alias is too long.'
+    if len(alias) < 3:
+        return 'Sorry {user_fullname}, that alias is too short.'
+    return None
+
+def get_gif_url(keywords):
+    """
+    Get an URL to a gif, given some keywords.
+    """
+    response_json = requests.get(
+        config.GIFYCAT_SEARCH_URL,
+        params={'search_text': ' '.join(keywords)}
+        ).json()
+    gfycats = response_json.get('gfycats', [])
+    if gfycats:
+        gfycat_json = random.choice(gfycats)
+        return gfycat_json['max2mbGif']
+    return None
