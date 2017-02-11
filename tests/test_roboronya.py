@@ -8,4 +8,4 @@ def bar():
 
 
 def test_foo(bar):
-    assert 'foobar' == 'foo' + bar
+    assert 'foobar' == 'wrong' + bar
