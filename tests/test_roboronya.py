@@ -9,3 +9,4 @@ def bar():
 
 def test_foo(bar):
     assert 'foobar' == 'foo' + bar
+
